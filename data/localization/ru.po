@@ -1,0 +1,38 @@
+# ========== mods\Galaxy Map QoL\data\scripts\player\map\galaxymapqol.lua ==========
+#: mods\Galaxy Map QoL\data\scripts\player\map\galaxymapqol.lua:
+msgid "Edit icon"
+msgstr "Изменить иконку"
+
+#: mods\Galaxy Map QoL\data\scripts\player\map\galaxymapqol.lua:
+msgid "Edit selected color"
+msgstr "Изменить выбранный цвет"
+
+#: mods\Galaxy Map QoL\data\scripts\player\map\galaxymapqol.lua:
+msgid "Hide icons"
+msgstr "Спрятать иконки"
+
+#: mods\Galaxy Map QoL\data\scripts\player\map\galaxymapqol.lua:
+msgid "Show range"
+msgstr "Показать расстояние"
+
+#: mods\Galaxy Map QoL\data\scripts\player\map\galaxymapqol.lua:
+msgid "Resources"
+msgstr "Ресурсы"
+
+#: mods\Galaxy Map QoL\data\scripts\player\map\galaxymapqol.lua:
+msgid "Bosses"
+msgstr "Боссы"
+
+#: mods\Galaxy Map QoL\data\scripts\player\map\galaxymapqol.lua:
+msgid "(dist: ${num})"
+msgstr "(дист.: ${num})"
+
+#: mods\Galaxy Map QoL\data\scripts\player\map\galaxymapqol.lua:
+msgid "Incorrect icon"
+msgstr "Неправильная иконка"
+
+#: mods\Galaxy Map QoL\data\scripts\player\map\galaxymapqol.lua:
+msgid "Maximum amount of icons reached"
+msgstr "Достигнуто максимальное кол-во иконок"
+
+
