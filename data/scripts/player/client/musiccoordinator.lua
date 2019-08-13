@@ -6,6 +6,8 @@ function MusicCoordinator.initialize(...)
     galaxyMapQoL_initialize(...)
 
     for _, path in pairs(Player():getScripts()) do
+        path = path:gsub("\\", "/")
+        print("MusicCoordinator script path", path)
         if string.find(path, "data/scripts/player/map/galaxymapqol.lua") then
             return -- Server has the mod, don't use this file
         end
