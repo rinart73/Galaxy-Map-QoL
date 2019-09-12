@@ -79,7 +79,7 @@ function GalaxyMapQoL.requestAllianceData()
                 if playerIndex ~= player.index and server:isOnline(playerIndex) then
                     otherPlayer = Player(playerIndex)
                     if otherPlayer then
-                        status, syncedData = otherPlayer:invokeFunction("data/scripts/player/map/galaxymapqol.lua", "getAllianceData")
+                        status, syncedData = otherPlayer:invokeFunction("galaxymapqol.lua", "getAllianceData")
                         if status ~= 0 then
                             eprint("[ERROR][GalaxyMapQoL]: requestAllianceData - player status", status)
                         else
@@ -216,9 +216,9 @@ function GalaxyMapQoL.setSectorIcon(isAlliance, x, y, icon, color)
                 otherPlayer = Player(playerIndex)
                 if otherPlayer then
                     if allianceIcons[x_y] then
-                        status = otherPlayer:invokeFunction("data/scripts/player/map/galaxymapqol.lua", "setAllianceData", allianceIcons[x_y], allianceIconsCount)
+                        status = otherPlayer:invokeFunction("galaxymapqol.lua", "setAllianceData", allianceIcons[x_y], allianceIconsCount)
                     else
-                        status = otherPlayer:invokeFunction("data/scripts/player/map/galaxymapqol.lua", "setAllianceData", {x, y}, allianceIconsCount)
+                        status = otherPlayer:invokeFunction("galaxymapqol.lua", "setAllianceData", {x, y}, allianceIconsCount)
                     end
                     if status ~= 0 then
                         eprint("[ERROR][GalaxyMapQoL]: setSectorIcon - player status", status)

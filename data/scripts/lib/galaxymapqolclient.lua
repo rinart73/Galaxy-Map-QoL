@@ -486,7 +486,7 @@ function GalaxyMapQoL.drawCircle(renderer, radius, color, layer, color2, colorSw
     side = map:getCoordinatesScreenPosition(ivec2(1, 0)) - side
     local ex = math.floor(radius)
     local bx, by = -ex, 0
-    local sx, sy = map:getCoordinatesScreenPosition(ivec2(bx, by))
+    local sx, sy = map:getCoordinatesScreenPosition(ivec2(bx --[[+ centerX]], by --[[+ centerY]]))
     local cx1, cy1, cx2, cy2, tcy1, tcy2
     local y, k
     local x1, y1, ak = -ex, 0, 0
