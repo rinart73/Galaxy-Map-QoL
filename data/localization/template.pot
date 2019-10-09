@@ -12,7 +12,7 @@ msgid "Hide icons"
 msgstr ""
 
 #: mods\Galaxy Map QoL\data\scripts\player\map\galaxymapqol.lua:
-msgid "Show range"
+msgid "Show overlay"
 msgstr ""
 
 #: mods\Galaxy Map QoL\data\scripts\player\map\galaxymapqol.lua:
@@ -24,7 +24,7 @@ msgid "Bosses"
 msgstr ""
 
 #: mods\Galaxy Map QoL\data\scripts\player\map\galaxymapqol.lua:
-msgid "(dist: ${num})"
+msgid "${x} : ${y} (dist: ${num})"
 msgstr ""
 
 #: mods\Galaxy Map QoL\data\scripts\player\map\galaxymapqol.lua:

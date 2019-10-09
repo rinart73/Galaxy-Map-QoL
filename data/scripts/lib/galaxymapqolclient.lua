@@ -8,12 +8,13 @@ local Azimuth = include("azimuthlib-basic")
 
 GalaxyMapQoL = {}
 
-local editIconBtn, iconsFactionComboBox, showDistanceComboBox, legendRows, editIconWindow, coordinatesLabel, editIconScrollFrame, colorSelector, colorPictures, colorPicker, iconSelector -- UI
+local editIconBtn, iconsFactionComboBox, showOverlayComboBox, legendRows, editIconWindow, coordinatesLabel, editIconScrollFrame, colorSelector, colorPictures, colorPicker, iconSelector -- UI
 -- client
 local config, customNamespace, sectorsPlayer, sectorsAlliance, isServerUsed, isEditIconShown, iconsFactionBoxHasAlliance, iconPictures, selectedIcon, editedX, editedY, materialDistances, distToCenter, selectedColorIndex
+local overlays = {}
 local icons = {"empty", "adopt", "alliance", "anchor", "bag", "bug-report", "cattle", "checkmark", "clockwise-rotation", "cog", "crew", "cross-mark", "diamonds", "domino-mask", "electric", "fighter", "look-at", "flying-flag", "halt", "health-normal", "hourglass", "inventory", "move", "round-star", "select", "shield", "trash-can", "unchecked", "vortex"}
 local passageMap = PassageMap(Seed(GameSettings().seed))
-local distColor = ColorInt(0xff999999)
+local distColor = ColorRGB(1, 1, 1)
 local bossDistances = {
   { min = 380, max = 430, name = "Boss Swoks ${num}"%_t % {num = ""}, color = ColorARGB(0.7, 1, 0, 0) },
   { min = 280, max = 340, name = "The AI"%_t, color = ColorARGB(0.7, 0, 1, 0) },
@@ -21,6 +22,7 @@ local bossDistances = {
   { min = 150, max = 180, name = "The 4", color = ColorARGB(0.7, 1, 1, 0), minExtraColor = ColorARGB(0.7, 0.5, 0.5, 1) }
 }
 local galaxyMapQoL_updateClient -- extended functions
+
 
 function GalaxyMapQoL.initialize()
     -- load config
@@ -83,10 +85,10 @@ function GalaxyMapQoL.initUI()
     iconsFactionComboBox:addEntry("Player"%_t)
     iconsFactionComboBox:setSelectedIndexNoCallback(1)
 
-    showDistanceComboBox = container:createComboBox(Rect(460, 85, 660, 110), "galaxyMapQoL_onShowDistanceBoxChanged")
-    showDistanceComboBox:addEntry("Show range"%_t)
-    showDistanceComboBox:addEntry("Resources"%_t)
-    showDistanceComboBox:addEntry("Bosses"%_t)
+    showOverlayComboBox = container:createComboBox(Rect(460, 85, 660, 110), "galaxyMapQoL_onShowOverlayBoxChanged")
+    showOverlayComboBox:addEntry("Show overlay"%_t)
+    GalaxyMapQoL.addOverlay("Resources", "Resources"%_t, "onResourcesOverlaySelected", "onResourcesOverlayRendered")
+    GalaxyMapQoL.addOverlay("Bosses", "Bosses"%_t, "onBossesOverlaySelected", "onBossesOverlayRendered")
 
     local lister = UIVerticalLister(Rect(670, 10, 770, 10), 5, 0)
     local partitions, picture, label
@@ -231,6 +233,30 @@ function GalaxyMapQoL.sync(isFullSync, playerData, allianceData)
     end
 end
 
+function GalaxyMapQoL.addOverlay(key, name, onSelect, onRender) -- unique key, translated name, select func, render func
+    overlays[#overlays+1] = {
+      key = key,
+      name = name,
+      onSelect = onSelect,
+      onRender = onRender
+    }
+    showOverlayComboBox:addEntry(name)
+end
+
+function GalaxyMapQoL.removeOverlay(key)
+    showOverlayComboBox.selectedIndex = 0
+    showOverlayComboBox:clear()
+    showOverlayComboBox:addEntry("Show overlay"%_t)
+    local newOverlays = {}
+    for _, overlay in ipairs(overlays) do
+        if overlay.key ~= key then
+            newOverlays[#newOverlays+1] = overlay
+            showOverlayComboBox:addEntry(overlay.name)
+        end
+    end
+    overlays = newOverlays
+end
+
 function GalaxyMapQoL.galaxyMapQoL_onShowGalaxyMap()
     if not isServerUsed and not sectorsPlayer then -- mod isn't installed on server side, using local storage
         sectorsPlayer = config.playerIcons
@@ -289,51 +315,58 @@ function GalaxyMapQoL.galaxyMapQoL_onMapRenderAfterLayers()
                 renderer:renderIcon(vec2(sx - half, sy - half), vec2(sx + half, sy + half), ColorInt(sector[4]), "data/textures/icons/galaxymapqol/"..sector[3]..".png")
             end
         end
-        
-        -- draw distances
-        local showDistance = showDistanceComboBox.selectedIndex
-        if showDistance == 1 then -- materials
-            local color
-            for i, dist in ipairs(materialDistances) do
-                color = Material(i).color
-                color.a = 0.7
-                GalaxyMapQoL.drawCircle(renderer, materialDistances[i], color, 1)
-            end
-        elseif showDistance == 2 then -- bosses
-            for _, boss in ipairs(bossDistances) do
-                if not boss.noDrawMin then
-                    if not boss.minExtraColor then
-                        GalaxyMapQoL.drawCircle(renderer, boss.min, boss.color, 1)
-                    else
-                        GalaxyMapQoL.drawCircle(renderer, boss.min, boss.color, 1, boss.minExtraColor, 5)
-                    end
-                end
-                GalaxyMapQoL.drawCircle(renderer, boss.max, boss.color, 1)
+
+        -- draw overlay
+        local overlayIndex = showOverlayComboBox.selectedIndex
+        if overlayIndex > 0 then
+            local overlay = overlays[overlayIndex]
+            if overlay and overlay.onRender and GalaxyMapQoL[overlay.onRender] then
+                GalaxyMapQoL[overlay.onRender](renderer)
             end
         end
-        
+
         renderer:display()
     end
-    -- draw distance to center
+
+    GalaxyMapQoL.drawDistanceToCenter(map)
+end
+
+function GalaxyMapQoL.drawDistanceToCenter(map)
     local x, y = map:getHoveredCoordinates()
     if x then
         if not distToCenter or distToCenter.x ~= x or distToCenter.y ~= y then
             local passable = passageMap:passable(x, y)
             distToCenter = { x = x, y = y, passable = passable }
             if passable then
-                local dx = 0
-                if x < 0 then dx = dx + 6 end
-                if y < 0 then dx = dx + 6 end
-                dx = dx + (string.len(tostring(math.abs(x))) - 1) * 10
-                dx = dx + (string.len(tostring(math.abs(y))) - 1) * 10
-                distToCenter.dx = dx
-                distToCenter.text = "(dist: ${num})"%_t % {num = tonumber(string.format("%.4f", math.sqrt(x*x + y*y)))}
+                distToCenter.text = "${x} : ${y} (dist: ${num})"%_t % {x = x, y = y, num = tonumber(string.format("%.4f", math.sqrt(x*x + y*y)))}
             end
         end
         if distToCenter.passable then
             local mx, my = map:getCoordinatesScreenPosition(ivec2(x, y))
-            drawText(distToCenter.text, mx + 68 + distToCenter.dx, my - 15, distColor, 13, 0, 0, 1)
+            drawText(distToCenter.text, mx + 24, my - 15, distColor, 13, 0, 0, 1)
         end
+    end
+end
+
+function GalaxyMapQoL.onResourcesOverlayRendered(renderer)
+    local color
+    for i, dist in ipairs(materialDistances) do
+        color = Material(i).color
+        color.a = 0.7
+        GalaxyMapQoL.drawCircle(renderer, materialDistances[i], color, 1)
+    end
+end
+
+function GalaxyMapQoL.onBossesOverlayRendered(renderer)
+    for _, boss in ipairs(bossDistances) do
+        if not boss.noDrawMin then
+            if not boss.minExtraColor then
+                GalaxyMapQoL.drawCircle(renderer, boss.min, boss.color, 1)
+            else
+                GalaxyMapQoL.drawCircle(renderer, boss.min, boss.color, 1, boss.minExtraColor, 5)
+            end
+        end
+        GalaxyMapQoL.drawCircle(renderer, boss.max, boss.color, 1)
     end
 end
 
@@ -387,14 +420,28 @@ function GalaxyMapQoL.galaxyMapQoL_onIconsFactionBoxChanged()
     end
 end
 
-function GalaxyMapQoL.galaxyMapQoL_onShowDistanceBoxChanged()
-    local showDistance = showDistanceComboBox.selectedIndex
-    if showDistance == 0 then -- hide legend
+function GalaxyMapQoL.galaxyMapQoL_onShowOverlayBoxChanged()
+    local overlayIndex = showOverlayComboBox.selectedIndex
+    local selectedFunc
+    for index, overlay in ipairs(overlays) do
+        if index == overlayIndex then
+            selectedFunc = overlay.onSelect
+        elseif overlay.onSelect and GalaxyMapQoL[overlay.onSelect] then
+            GalaxyMapQoL[overlay.onSelect](false)
+        end
+    end
+    if selectedFunc and GalaxyMapQoL[selectedFunc] then
+        GalaxyMapQoL[selectedFunc](true)
+    end
+end
+
+function GalaxyMapQoL.onResourcesOverlaySelected(isSelected)
+    if not isSelected then -- hide legend
         for _, row in ipairs(legendRows) do
             row.picture.visible = false
             row.label.visible = false
         end
-    elseif showDistance == 1 then -- materials
+    else -- show legend
         local material, color
         for i, row in ipairs(legendRows) do
             material = Material(i)
@@ -405,7 +452,16 @@ function GalaxyMapQoL.galaxyMapQoL_onShowDistanceBoxChanged()
             row.picture.visible = true
             row.label.visible = true
         end
-    else -- bosses
+    end
+end
+
+function GalaxyMapQoL.onBossesOverlaySelected(isSelected)
+    if not isSelected then -- hide legend
+        for _, row in ipairs(legendRows) do
+            row.picture.visible = false
+            row.label.visible = false
+        end
+    else -- show legend
         local row
         for i, boss in ipairs(bossDistances) do
             row = legendRows[i]
@@ -413,11 +469,6 @@ function GalaxyMapQoL.galaxyMapQoL_onShowDistanceBoxChanged()
             row.label.caption = boss.name.." - "..boss.min.."-"..boss.max
             row.picture.visible = true
             row.label.visible = true
-        end
-        for i = #bossDistances+1, #legendRows do
-            row = legendRows[i]
-            row.picture.visible = false
-            row.label.visible = false
         end
     end
 end
@@ -559,7 +610,7 @@ function GalaxyMapQoL.initOtherNamespace(namespace)
     namespace.galaxyMapQoL_onMapRenderAfterLayers = GalaxyMapQoL.galaxyMapQoL_onMapRenderAfterLayers
     namespace.galaxyMapQoL_onEditIconBtnPressed = GalaxyMapQoL.galaxyMapQoL_onEditIconBtnPressed
     namespace.galaxyMapQoL_onIconsFactionBoxChanged = GalaxyMapQoL.galaxyMapQoL_onIconsFactionBoxChanged
-    namespace.galaxyMapQoL_onShowDistanceBoxChanged = GalaxyMapQoL.galaxyMapQoL_onShowDistanceBoxChanged
+    namespace.galaxyMapQoL_onShowOverlayBoxChanged = GalaxyMapQoL.galaxyMapQoL_onShowOverlayBoxChanged
     namespace.galaxyMapQoL_onEditSelectedColorBtnPressed = GalaxyMapQoL.galaxyMapQoL_onEditSelectedColorBtnPressed
     namespace.galaxyMapQoL_onColorPickerApplyBtnPressed = GalaxyMapQoL.galaxyMapQoL_onColorPickerApplyBtnPressed
     namespace.galaxyMapQoL_onEditIconApplyBtnPressed = GalaxyMapQoL.galaxyMapQoL_onEditIconApplyBtnPressed

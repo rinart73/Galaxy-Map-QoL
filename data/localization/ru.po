@@ -12,8 +12,8 @@ msgid "Hide icons"
 msgstr "Спрятать иконки"
 
 #: mods\Galaxy Map QoL\data\scripts\player\map\galaxymapqol.lua:
-msgid "Show range"
-msgstr "Показать расстояние"
+msgid "Show overlay"
+msgstr "Показать оверлей"
 
 #: mods\Galaxy Map QoL\data\scripts\player\map\galaxymapqol.lua:
 msgid "Resources"
@@ -24,8 +24,8 @@ msgid "Bosses"
 msgstr "Боссы"
 
 #: mods\Galaxy Map QoL\data\scripts\player\map\galaxymapqol.lua:
-msgid "(dist: ${num})"
-msgstr "(дист.: ${num})"
+msgid "${x} : ${y} (dist: ${num})"
+msgstr "${x} : ${y} (дист.: ${num})"
 
 #: mods\Galaxy Map QoL\data\scripts\player\map\galaxymapqol.lua:
 msgid "Incorrect icon"
