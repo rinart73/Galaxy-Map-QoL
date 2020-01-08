@@ -1,1 +1,0 @@
-Galaxy():addScriptOnce("galaxymapqol.lua")

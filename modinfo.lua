@@ -4,24 +4,24 @@ meta =
     -- ID of your mod; Make sure this is unique!
     -- Will be used for identifying the mod in dependency lists
     -- Will be changed to workshop ID (ensuring uniqueness) when you upload the mod to the workshop
-    id = "1765619430",
+    id = "SteamIdWillBeHere",
 
     -- Name of your mod; You may want this to be unique, but it's not absolutely necessary.
     -- This is an additional helper attribute for you to easily identify your mod in the Mods() list
-    name = "GalaxyMapQoL",
+    name = "GalaxyMapQoL_YourIconPack",
 
     -- Title of your mod that will be displayed to players
-    title = "Galaxy Map QoL",
+    title = "Galaxy Map QoL - Icon Pack",
 
     -- Description of your mod that will be displayed to players
-    description = "Provides QoL changes for Galaxy Map, such as icons, resource and boss ranges, distance to center.",
+    description = "Adds more icons to the Galaxy Map QoL",
 
     -- Insert all authors into this list
-    authors = {"Rinart73"},
+    authors = {"YourName"},
 
     -- Version of your mod, should be in format 1.0.0 (major.minor.patch) or 1.0 (major.minor)
     -- This will be used to check for unmet dependencies or incompatibilities
-    version = "1.3",
+    version = "1.0.0",
 
     -- If your mod requires dependencies, enter them here. The game will check that all dependencies given here are met.
     -- Possible attributes:
@@ -39,8 +39,8 @@ meta =
     --      {id = "OptionalMod", min = "0.2", optional = true}, -- we support OptionalMod optionally, starting at version 0.2
     -- },
     dependencies = {
-        {id = "1722652757", min = "1.2.6"},
-        {id = "Avorion", min = "0.29", max = "0.29.6"}
+        {id = "1765619430", min = "1.3"},
+        {id = "Avorion", exact = "0.*"}
     },
 
     -- Set to true if the mod only has to run on the server. Clients will get notified that the mod is running on the server, but they won't download it to themselves
@@ -54,5 +54,5 @@ meta =
     saveGameAltering = false,
 
     -- Contact info for other users to reach you in case they have questions
-    contact = "rinart73@gmail.com",
+    contact = "your@email.com",
 }
