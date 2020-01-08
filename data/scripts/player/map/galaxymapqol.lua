@@ -3,7 +3,7 @@ package.path = package.path .. ";data/scripts/lib/?.lua"
 -- namespace GalaxyMapQoL
 GalaxyMapQoL = {}
 
-local Azimuth, config, data, allianceIcons, allianceIconsCount, allianceIndex, isAllianceDataSynced -- server
+local Azimuth, Config, Log, Integration, data, allianceIcons, allianceIndex, allianceLastRequest, isAllianceDataSynced, warZoneTimestamp -- server
 local icons = {"empty", "adopt", "alliance", "anchor", "bag", "bug-report", "cattle", "checkmark", "clockwise-rotation", "cog", "crew", "cross-mark", "diamonds", "domino-mask", "electric", "fighter", "look-at", "flying-flag", "halt", "health-normal", "hourglass", "inventory", "move", "round-star", "select", "shield", "trash-can", "unchecked", "vortex"} -- server
 
 if onClient() then
@@ -16,33 +16,27 @@ else -- onServer
 
 
 include("callable")
-Azimuth = include("azimuthlib-basic")
+Azimuth, Config, Log = unpack(include("galaxymapqolinit"))
+Integration = include("GalaxyMapQoLIntegration")
 
 data = { playerIcons = {}, playerIconsCount = 0 }
 allianceIcons = {}
-allianceIconsCount = 0
 allianceIndex = -1
+allianceLastRequest = -1
 isAllianceDataSynced = false
+warZoneTimestamp = -1 -- last time player requested war zone data
 
 function GalaxyMapQoL.initialize()
-    local configOptions = {
-      _version = { default = "1.0", comment = "Config version. Don't touch." },
-      IconsPerPlayer = { default = 75, min = 0, format = "floor", comment = "How many icons player can have" },
-      IconsPerAlliance = { default = 200, min = 0, format = "floor", comment = "How many icons alliance can have" },
-    }
-    local isModified
-    config, isModified = Azimuth.loadConfig("GalaxyMapQoL", configOptions)
-    if isModified then
-        Azimuth.saveConfig("GalaxyMapQoL", config, configOptions)
-    end
-
     local arr = {}
+    -- custom icons
+    for i = 1, #Integration do
+        arr[Integration[i]] = true
+    end
+    -- reformat icons
     for i = 1, #icons do
         arr[icons[i]] = true
     end
     icons = arr
-    
-    GalaxyMapQoL.requestAllianceData()
 end
 
 function GalaxyMapQoL.secure()
@@ -68,68 +62,76 @@ function GalaxyMapQoL.sync(isInit)
 end
 callable(GalaxyMapQoL, "sync")
 
+function GalaxyMapQoL.syncWarZones()
+    local now = appTime()
+    local player = Player()
+    if Server():hasAdminPrivileges(player) or warZoneTimestamp + Config.HazardZoneRequestInterval <= now then
+        warZoneTimestamp = now
+        local status, syncedData = Galaxy():invokeFunction("galaxymapqol.lua", "getWarZoneData")
+        if status ~= 0 or syncedData == nil then
+            Log.Error("syncWarZones failed: %s, %s", tostring(status), tostring(syncedData == nil))
+        else
+            local knownWarzones = {}
+            local uniqueSectors = {}
+            local x_y
+            for i, vec in ipairs({player:getKnownSectorCoordinates()}) do
+                x_y = vec.x..'_'..vec.y
+                if syncedData[x_y] then
+                    knownWarzones[#knownWarzones+1] = {vec.x, vec.y}
+                    uniqueSectors[x_y] = true
+                end
+            end
+            if player.alliance then
+                for i, vec in ipairs({player.alliance:getKnownSectorCoordinates()}) do
+                    x_y = vec.x..'_'..vec.y
+                    if syncedData[x_y] and not uniqueSectors[x_y] then
+                        knownWarzones[#knownWarzones+1] = {vec.x, vec.y}
+                    end
+                end
+            end
+            Log.Debug("syncWarZones: %s", knownWarzones)
+            invokeClientFunction(player, "syncWarZones", knownWarzones)
+        end
+        --[[-- get rid of ivec objects
+        local knownCoords = {}
+        for i, vec in ipairs({player:getKnownSectorCoordinates()}) do
+            knownCoords[i] = {vec.x, vec.y}
+        end
+        local status, syncedData = Galaxy():invokeFunction("galaxymapqol.lua", "getWarZoneData", knownCoords)
+        if status ~= 0 or syncedData == nil then
+            Log.Error("syncWarZones failed: %s, %s", tostring(status), tostring(syncedData == nil))
+        else
+            invokeClientFunction(player, "syncWarZones", syncedData)
+        end]]
+    else
+        Log.Debug("syncWarZones - request ignored due to the time restrictions")
+    end
+end
+callable(GalaxyMapQoL, "syncWarZones")
+
 function GalaxyMapQoL.requestAllianceData()
     -- sync alliance icons
     local player = Player()
+    if allianceIndex ~= player.allianceIndex then -- if player changed alliance, force update
+        allianceLastRequest = -1
+        allianceIndex = player.allianceIndex
+    end
     if player.alliance then
-        if allianceIndex ~= player.allianceIndex then
-            local server = Server()
-            local otherPlayer, status, syncedData
-            for _, playerIndex in pairs({player.alliance:getMembers()}) do
-                if playerIndex ~= player.index and server:isOnline(playerIndex) then
-                    otherPlayer = Player(playerIndex)
-                    if otherPlayer then
-                        status, syncedData = otherPlayer:invokeFunction("galaxymapqol.lua", "getAllianceData")
-                        if status ~= 0 then
-                            eprint("[ERROR][GalaxyMapQoL]: requestAllianceData - player status", status)
-                        else
-                            break
-                        end
-                    end
-                end
+        local status, syncedData, newTimestamp = Galaxy():invokeFunction("galaxymapqol.lua", "getAllianceData", player.allianceIndex, allianceLastRequest)
+        if status ~= 0 or syncedData == nil or newTimestamp == nil then
+            Log.Error("requestAllianceData failed: %s, %s, %s", tostring(status), tostring(syncedData == nil), tostring(newTimestamp))
+            isAllianceDataSynced = true
+        else
+            allianceLastRequest = newTimestamp
+            if syncedData ~= false then
+                Log.Debug("requestAllianceData: %s, %f", syncedData, allianceLastRequest)
+                allianceIcons = syncedData
+                isAllianceDataSynced = false
+            else
+                Log.Debug("requestAllianceData: false, %f", allianceLastRequest)
             end
-            if syncedData then
-                allianceIcons = syncedData.allianceIcons
-                allianceIconsCount = syncedData.allianceIconsCount
-            else -- load from disk
-                syncedData = Azimuth.loadConfig("AllianceData_"..player.alliance.index, { allianceIcons = { default = {} }, allianceIconsCount = { default = 0 } }, false, "GalaxyMapQoL")
-                allianceIcons = syncedData.allianceIcons
-                allianceIconsCount = syncedData.allianceIconsCount
-                -- fix icon errors from previous versions
-                local iconsAmount = 0
-                for key, sector in pairs(allianceIcons) do
-                    if sector[3] then
-                        iconsAmount = iconsAmount + 1
-                    else -- remove
-                        allianceIcons[key] = nil
-                    end
-                end
-                if allianceIconsCount ~= iconsAmount then
-                    allianceIconsCount = iconsAmoun
-                    Azimuth.saveConfig("AllianceData_"..player.alliance.index, { allianceIcons = allianceIcons, allianceIconsCount = allianceIconsCount }, nil, false, "GalaxyMapQoL")
-                end
-            end
-            allianceIndex = player.allianceIndex
-            isAllianceDataSynced = false -- need to resync with client
         end
     end
-end
-callable(GalaxyMapQoL, "requestAllianceData")
-
-function GalaxyMapQoL.getAllianceData()
-    if allianceIndex == Player().allianceIndex then
-        return { allianceIcons = allianceIcons, allianceIconsCount = allianceIconsCount }
-    end
-end
-
-function GalaxyMapQoL.setAllianceData(sector, count)
-    if sector[3] then -- change/add
-        allianceIcons[sector[1].."_"..sector[2]] = sector
-    else
-        allianceIcons[sector[1].."_"..sector[2]] = nil -- remove
-    end
-    allianceIconsCount = count
-    isAllianceDataSynced = false
 end
 
 function GalaxyMapQoL.setSectorIcon(isAlliance, x, y, icon, color)
@@ -169,7 +171,7 @@ function GalaxyMapQoL.setSectorIcon(isAlliance, x, y, icon, color)
         elseif sector then -- change
             data.playerIcons[x_y] = { x, y, icon, color }
         else -- add
-            if data.playerIconsCount >= config.IconsPerPlayer then
+            if data.playerIconsCount >= Config.IconsPerPlayer then
                 player:sendChatMessage("", 1, "Maximum amount of icons reached"%_t)
                 return
             end
@@ -187,47 +189,18 @@ function GalaxyMapQoL.setSectorIcon(isAlliance, x, y, icon, color)
             player:sendChatMessage("", 1, "You don't have permission to do that in the name of your alliance."%_t)
             return
         end
-        local sector = allianceIcons[x_y]
-        if not icon then -- remove
-            if sector then
-                allianceIcons[x_y] = nil
-                allianceIconsCount = allianceIconsCount - 1
-            end
-        elseif sector then -- change
-            allianceIcons[x_y] = { x, y, icon, color }
-        else -- add
-            if allianceIconsCount >= config.IconsPerAlliance then
-                player:sendChatMessage("", 1, "Maximum amount of icons reached"%_t)
-                return
-            end
-            allianceIcons[x_y] = { x, y, icon, color }
-            allianceIconsCount = allianceIconsCount + 1
-        end
-        if allianceIcons[x_y] then
-            invokeClientFunction(player, "sync", false, nil, allianceIcons[x_y])
-        else
-            invokeClientFunction(player, "sync", false, nil, {x, y})
-        end
-        -- send updated data to other online players
-        local server = Server()
-        local otherPlayer, status
-        for _, playerIndex in pairs({player.alliance:getMembers()}) do
-            if playerIndex ~= player.index and server:isOnline(playerIndex) then
-                otherPlayer = Player(playerIndex)
-                if otherPlayer then
-                    if allianceIcons[x_y] then
-                        status = otherPlayer:invokeFunction("galaxymapqol.lua", "setAllianceData", allianceIcons[x_y], allianceIconsCount)
-                    else
-                        status = otherPlayer:invokeFunction("galaxymapqol.lua", "setAllianceData", {x, y}, allianceIconsCount)
-                    end
-                    if status ~= 0 then
-                        eprint("[ERROR][GalaxyMapQoL]: setSectorIcon - player status", status)
-                    end
-                end
+        local status, hasIcon, newTimestamp = Galaxy():invokeFunction("galaxymapqol.lua", "setAllianceData", player.index, player.allianceIndex, x, y, icon, color, allianceLastRequest)
+        if status ~= 0 or newTimestamp == nil then
+            Log.Error("setSectorIcon (alliance) failed: %s, %s, %s", tostring(status), tostring(hasIcon), tostring(newTimestamp))
+        elseif hasIcon ~= nil then
+            allianceLastRequest = newTimestamp
+            Log.Debug("setSectorIcon (alliance): %s, %f", tostring(hasIcon), allianceLastRequest)
+            if hasIcon then
+                invokeClientFunction(player, "sync", false, nil, {x, y, icon, color})
+            else
+                invokeClientFunction(player, "sync", false, nil, {x, y})
             end
         end
-        -- save data
-        Azimuth.saveConfig("AllianceData_"..player.alliance.index, { allianceIcons = allianceIcons, allianceIconsCount = allianceIconsCount }, nil, false, "GalaxyMapQoL")
     end
 end
 callable(GalaxyMapQoL, "setSectorIcon")

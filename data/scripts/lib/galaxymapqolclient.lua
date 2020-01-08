@@ -5,16 +5,20 @@ include("azimuthlib-uicolorpicker")
 include("azimuthlib-uiproportionalsplitter")
 include("azimuthlib-uirectangle")
 local Azimuth = include("azimuthlib-basic")
+local Integration = include("GalaxyMapQoLIntegration")
 
 GalaxyMapQoL = {}
 
-local editIconBtn, iconsFactionComboBox, showOverlayComboBox, legendRows, editIconWindow, coordinatesLabel, editIconScrollFrame, colorSelector, colorPictures, colorPicker, iconSelector -- UI
+local editIconBtn, iconsFactionComboBox, showOverlayComboBox, legendRows, editIconWindow, coordinatesLabel, editIconScrollFrame, colorSelector, colorPictures, colorPicker, iconSelector, warZoneCheckBox -- UI
 -- client
-local config, customNamespace, sectorsPlayer, sectorsAlliance, isServerUsed, isEditIconShown, iconsFactionBoxHasAlliance, iconPictures, selectedIcon, editedX, editedY, materialDistances, distToCenter, selectedColorIndex
+local Config, customNamespace, sectorsPlayer, sectorsAlliance, isServerUsed, isEditIconShown, iconsFactionBoxHasAlliance, iconPictures, selectedIcon, editedX, editedY, materialDistances, distToCenter, selectedColorIndex
 local overlays = {}
+local warZoneData = {}
 local icons = {"empty", "adopt", "alliance", "anchor", "bag", "bug-report", "cattle", "checkmark", "clockwise-rotation", "cog", "crew", "cross-mark", "diamonds", "domino-mask", "electric", "fighter", "look-at", "flying-flag", "halt", "health-normal", "hourglass", "inventory", "move", "round-star", "select", "shield", "trash-can", "unchecked", "vortex"}
 local passageMap = PassageMap(Seed(GameSettings().seed))
 local distColor = ColorRGB(1, 1, 1)
+local borderColor = ColorRGB(0.5, 0.5, 0.5)
+local warZoneColor = ColorRGB(1, 0.1, 0)
 local bossDistances = {
   { min = 380, max = 430, name = "Boss Swoks ${num}"%_t % {num = ""}, color = ColorARGB(0.7, 1, 0, 0) },
   { min = 280, max = 340, name = "The AI"%_t, color = ColorARGB(0.7, 0, 1, 0) },
@@ -44,12 +48,17 @@ function GalaxyMapQoL.initialize()
       colors = { default = defaultColors }
     }
     local isModified
-    config, isModified = Azimuth.loadConfig("GalaxyMapQoL", configOptions, true, true)
+    Config, isModified = Azimuth.loadConfig("GalaxyMapQoL", configOptions, true, true)
     if isModified then
-        Azimuth.saveConfig("GalaxyMapQoL", config, configOptions, true, true)
+        Azimuth.saveConfig("GalaxyMapQoL", Config, configOptions, true, true)
     end
     for i = 1, 10 do
-        config.colors[i] = ColorInt(config.colors[i])
+        Config.colors[i] = ColorInt(Config.colors[i])
+    end
+    
+    -- custom icons
+    for i = 1, #Integration do
+        icons[#icons + 1] = Integration[i]
     end
 
     -- calculating material distances
@@ -122,7 +131,7 @@ function GalaxyMapQoL.initUI()
         if i == 0 then
             color = ColorRGB(0, 0.5, 0)
         else
-            color = config.colors[i]
+            color = Config.colors[i]
         end
         picture.color = color
         colorPictures[i+1] = { picture = picture, color = color }
@@ -162,6 +171,13 @@ function GalaxyMapQoL.initUI()
     btn.maxTextSize = 14
     btn = editIconWindow:createButton(splitter.right, "Cancel"%_t, "galaxyMapQoL_onEditIconCancelBtnPressed")
     btn.maxTextSize = 14
+    
+    -- checkbox for war zones
+    if not customNamespace then
+        warZoneCheckBox = container:createCheckBox(Rect(150, 140, 300, 160), "Hazard Zones"%_t, "onWarZoneCheckBoxChecked")
+        warZoneCheckBox.captionLeft = false
+        warZoneCheckBox:setCheckedNoCallback(true)
+    end
 
     -- color picker
     if not customNamespace then
@@ -233,6 +249,13 @@ function GalaxyMapQoL.sync(isFullSync, playerData, allianceData)
     end
 end
 
+function GalaxyMapQoL.syncWarZones(data)
+    warZoneData = {}
+    for _, s in ipairs(data) do
+        warZoneData[s[1]..'_'..s[2]] = s
+    end
+end
+
 function GalaxyMapQoL.addOverlay(key, name, onSelect, onRender) -- unique key, translated name, select func, render func
     overlays[#overlays+1] = {
       key = key,
@@ -259,7 +282,7 @@ end
 
 function GalaxyMapQoL.galaxyMapQoL_onShowGalaxyMap()
     if not isServerUsed and not sectorsPlayer then -- mod isn't installed on server side, using local storage
-        sectorsPlayer = config.playerIcons
+        sectorsPlayer = Config.playerIcons
         sectorsAlliance = {}
     end
 
@@ -280,33 +303,38 @@ function GalaxyMapQoL.galaxyMapQoL_onShowGalaxyMap()
     -- enable/disable 'edit icons' button
     GalaxyMapQoL.galaxyMapQoL_onIconsFactionBoxChanged()
 
-    if isServerUsed and alliance then
-        invokeServerFunction("sync") -- sync data
+    if isServerUsed and warZoneCheckBox.checked then
+        invokeServerFunction("syncWarZones")
     end
+
+    --[[if isServerUsed and alliance then
+        invokeServerFunction("sync") -- sync data
+    end]]
 end
 
 function GalaxyMapQoL.galaxyMapQoL_onHideGalaxyMap()
     isEditIconShown = false
 
-    config.colors = {}
+    Config.colors = {}
     for i = 1, 10 do
-        config.colors[i] = colorPictures[i+1].color:toInt()
+        Config.colors[i] = colorPictures[i+1].color:toInt()
     end
-    Azimuth.saveConfig("GalaxyMapQoL", config, { _version = {comment = "Don't touch this file"} }, true, true)
+    Azimuth.saveConfig("GalaxyMapQoL", Config, { _version = {comment = "Don't touch this file"} }, true, true)
 end
 
 function GalaxyMapQoL.galaxyMapQoL_onMapRenderAfterLayers()
     local map = GalaxyMap()
+
+    local half, topX, bottomY, bottomX, topY
+
     -- draw icons
     local iconFaction = iconsFactionComboBox.selectedIndex
     if iconFaction ~= 0 then
-        local half = map:getCoordinatesScreenPosition(ivec2(0, 0))
-        half = map:getCoordinatesScreenPosition(ivec2(1, 0)) - half
-        half = half * 0.5
-        local topX, bottomY = map:getCoordinatesAtScreenPosition(vec2(0, 0))
-        local bottomX, topY = map:getCoordinatesAtScreenPosition(getResolution())
-
         local renderer = UIRenderer()
+        half = (map:getCoordinatesScreenPosition(ivec2(1, 0)) - map:getCoordinatesScreenPosition(ivec2(0, 0))) * 0.5
+        topX, bottomY = map:getCoordinatesAtScreenPosition(vec2(0, 0))
+        bottomX, topY = map:getCoordinatesAtScreenPosition(getResolution())
+
         local sectors = iconFaction == 1 and sectorsPlayer or sectorsAlliance
         local sx, sy
         for _, sector in pairs(sectors) do
@@ -324,9 +352,32 @@ function GalaxyMapQoL.galaxyMapQoL_onMapRenderAfterLayers()
                 GalaxyMapQoL[overlay.onRender](renderer)
             end
         end
-
+        
         renderer:display()
     end
+
+    -- draw war zone indicators
+    if warZoneCheckBox and warZoneCheckBox.checked then
+        local renderer = UIRenderer()
+        if not half then
+            half = (map:getCoordinatesScreenPosition(ivec2(1, 0)) - map:getCoordinatesScreenPosition(ivec2(0, 0))) * 0.5
+            topX, bottomY = map:getCoordinatesAtScreenPosition(vec2(0, 0))
+            bottomX, topY = map:getCoordinatesAtScreenPosition(getResolution())
+        end
+
+        local sx, sy
+        for _, sector in pairs(warZoneData) do
+            if sector[1] >= topX and sector[1] <= bottomX and sector[2] >= topY and sector[2] <= bottomY then
+                sx, sy = map:getCoordinatesScreenPosition(ivec2(sector[1], sector[2]))
+                renderer:renderRect(vec2(sx + half * 0.25, sy + half * 0.25), vec2(sx + half, sy + half), warZoneColor, 1)
+            end
+        end
+        
+        renderer:display()
+    end
+
+    -- make search bar more visible
+    drawBorder(Rect(148, 9, 450, 40), borderColor)
 
     GalaxyMapQoL.drawDistanceToCenter(map)
 end
@@ -339,6 +390,9 @@ function GalaxyMapQoL.drawDistanceToCenter(map)
             distToCenter = { x = x, y = y, passable = passable }
             if passable then
                 distToCenter.text = "${x} : ${y} (dist: ${num})"%_t % {x = x, y = y, num = tonumber(string.format("%.4f", math.sqrt(x*x + y*y)))}
+                if warZoneData[x..'_'..y] then
+                    distToCenter.text = distToCenter.text .. "\n Hazard Zone"%_t
+                end
             end
         end
         if distToCenter.passable then
@@ -414,6 +468,9 @@ function GalaxyMapQoL.galaxyMapQoL_onIconsFactionBoxChanged()
             editIconBtn.active = false
         else
             editIconBtn.active = true
+        end
+        if isServerUsed and alliance then
+            invokeServerFunction("sync") -- sync alliance data
         end
     else
         editIconBtn.active = true
@@ -512,6 +569,12 @@ function GalaxyMapQoL.galaxyMapQoL_onEditIconCancelBtnPressed()
     colorPicker:hide()
     editIconWindow.visible = false
     isEditIconShown = false
+end
+
+function GalaxyMapQoL.onWarZoneCheckBoxChecked()
+    if isServerUsed and warZoneCheckBox.checked then
+        invokeServerFunction("syncWarZones")
+    end
 end
 
 function GalaxyMapQoL.selectColor(index)

@@ -1,38 +1,51 @@
-# ========== mods\Galaxy Map QoL\data\scripts\player\map\galaxymapqol.lua ==========
-#: mods\Galaxy Map QoL\data\scripts\player\map\galaxymapqol.lua:
+# ========== Galaxy Map QoL\data\scripts\galaxy\galaxymapqol.lua ==========
+#: Galaxy Map QoL\data\scripts\galaxy\galaxymapqol.lua:
+#: Galaxy Map QoL\data\scripts\player\map\galaxymapqol.lua:
+msgid "Maximum amount of icons reached"
+msgstr ""
+
+
+# ========== Galaxy Map QoL\data\scripts\lib\galaxymapqolclient.lua ==========
+#: Galaxy Map QoL\data\scripts\lib\galaxymapqolclient.lua:
 msgid "Edit icon"
 msgstr ""
 
-#: mods\Galaxy Map QoL\data\scripts\player\map\galaxymapqol.lua:
-msgid "Edit selected color"
-msgstr ""
-
-#: mods\Galaxy Map QoL\data\scripts\player\map\galaxymapqol.lua:
+#: Galaxy Map QoL\data\scripts\lib\galaxymapqolclient.lua:
 msgid "Hide icons"
 msgstr ""
 
-#: mods\Galaxy Map QoL\data\scripts\player\map\galaxymapqol.lua:
+#: Galaxy Map QoL\data\scripts\lib\galaxymapqolclient.lua:
 msgid "Show overlay"
 msgstr ""
 
-#: mods\Galaxy Map QoL\data\scripts\player\map\galaxymapqol.lua:
+#: Galaxy Map QoL\data\scripts\lib\galaxymapqolclient.lua:
 msgid "Resources"
 msgstr ""
 
-#: mods\Galaxy Map QoL\data\scripts\player\map\galaxymapqol.lua:
+#: Galaxy Map QoL\data\scripts\lib\galaxymapqolclient.lua:
 msgid "Bosses"
 msgstr ""
 
-#: mods\Galaxy Map QoL\data\scripts\player\map\galaxymapqol.lua:
+#: Galaxy Map QoL\data\scripts\lib\galaxymapqolclient.lua:
+msgid "Edit selected color"
+msgstr ""
+
+#: Galaxy Map QoL\data\scripts\lib\galaxymapqolclient.lua:
+msgid "Hazard Zones"
+msgstr ""
+
+#: Galaxy Map QoL\data\scripts\lib\galaxymapqolclient.lua:
 msgid "${x} : ${y} (dist: ${num})"
 msgstr ""
 
-#: mods\Galaxy Map QoL\data\scripts\player\map\galaxymapqol.lua:
-msgid "Incorrect icon"
+#: Galaxy Map QoL\data\scripts\lib\galaxymapqolclient.lua:
+msgid "\n Hazard Zone"
 msgstr ""
 
-#: mods\Galaxy Map QoL\data\scripts\player\map\galaxymapqol.lua:
-msgid "Maximum amount of icons reached"
+
+# ========== Galaxy Map QoL\data\scripts\player\map\galaxymapqol.lua ==========
+#: Galaxy Map QoL\data\scripts\player\map\galaxymapqol.lua:
+msgid "Incorrect icon"
 msgstr ""
 
 
