@@ -87,19 +87,19 @@ end
 function GalaxyMapQoL.initUI()
     local map = GalaxyMap()
     local container = map:createContainer()
-    editIconBtn = container:createButton(Rect(460, 10, 660, 40), "Edit icon"%_t, "galaxyMapQoL_onEditIconBtnPressed")
+    editIconBtn = container:createButton(Rect(460, 50, 660, 80), "Edit icon"%_t, "galaxyMapQoL_onEditIconBtnPressed")
 
-    iconsFactionComboBox = container:createComboBox(Rect(460, 50, 660, 75), "galaxyMapQoL_onIconsFactionBoxChanged")
+    iconsFactionComboBox = container:createComboBox(Rect(460, 90, 660, 115), "galaxyMapQoL_onIconsFactionBoxChanged")
     iconsFactionComboBox:addEntry("Hide icons"%_t)
     iconsFactionComboBox:addEntry("Player"%_t)
     iconsFactionComboBox:setSelectedIndexNoCallback(1)
 
-    showOverlayComboBox = container:createComboBox(Rect(460, 85, 660, 110), "galaxyMapQoL_onShowOverlayBoxChanged")
+    showOverlayComboBox = container:createComboBox(Rect(460, 125, 660, 150), "galaxyMapQoL_onShowOverlayBoxChanged")
     showOverlayComboBox:addEntry("Show overlay"%_t)
     GalaxyMapQoL.addOverlay("Resources", "Resources"%_t, "onResourcesOverlaySelected", "onResourcesOverlayRendered")
     GalaxyMapQoL.addOverlay("Bosses", "Bosses"%_t, "onBossesOverlaySelected", "onBossesOverlayRendered")
 
-    local lister = UIVerticalLister(Rect(670, 10, 770, 10), 5, 0)
+    local lister = UIVerticalLister(Rect(670, 50, 770, 50), 5, 0)
     local partitions, picture, label
     legendRows = {}
     for i = 1, #materialDistances do
@@ -112,7 +112,7 @@ function GalaxyMapQoL.initUI()
     end
 
     -- edit icon window
-    editIconWindow = map:createWindow(Rect(670, 10, 970, 300))
+    editIconWindow = map:createWindow(Rect(670, 50, 970, 340))
     editIconWindow.visible = false
     partitions = UIHorizontalProportionalSplitter(Rect(editIconWindow.size), 10, 10, {15, 20, 24, 0.5, 25})
 
