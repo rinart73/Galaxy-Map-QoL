@@ -100,12 +100,12 @@ function GalaxyMapQoL.initUI()
     GalaxyMapQoL.addOverlay("Bosses", "Bosses"%_t, "onBossesOverlaySelected", "onBossesOverlayRendered")
 
     local lister = UIVerticalLister(Rect(670, 50, 770, 50), 5, 0)
-    local partitions, picture, label
+    local partitions, picture
     legendRows = {}
     for i = 1, #materialDistances do
         partitions = UIVerticalProportionalSplitter(lister:placeCenter(vec2(lister.inner.width, 18)), 5, 0, {18, 0.5})
         picture = container:createPicture(partitions[1], "data/textures/icons/galaxymapqol/ui-filled.png")
-        label = container:createLabel(partitions[2].lower, "", 12)
+        local label = container:createLabel(partitions[2].lower, "", 12)
         picture.visible = false
         label.visible = false
         legendRows[i] = { picture = picture, label = label }
@@ -174,7 +174,7 @@ function GalaxyMapQoL.initUI()
     
     -- checkbox for war zones
     if not customNamespace then
-        warZoneCheckBox = container:createCheckBox(Rect(150, 140, 300, 160), "Hazard Zones"%_t, "onWarZoneCheckBoxChecked")
+        warZoneCheckBox = container:createCheckBox(Rect(150, 170, 300, 190), "Hazard Zones"%_t, "onWarZoneCheckBoxChecked")
         warZoneCheckBox.captionLeft = false
         warZoneCheckBox:setCheckedNoCallback(true)
     end
@@ -208,9 +208,8 @@ function GalaxyMapQoL.updateClient(timeStep)
             end
             -- select icon
             if pos.x >= editIconScrollFrame.lower.x and pos.x <= editIconScrollFrame.upper.x and pos.y >= editIconScrollFrame.lower.y and pos.y <= editIconScrollFrame.upper.y then
-                local picture
                 for i = 1, #icons do
-                    picture = iconPictures[i]
+                    local picture = iconPictures[i]
                     if pos.x >= picture.lower.x and pos.x <= picture.upper.x and pos.y >= picture.lower.y and pos.y <= picture.upper.y then
                         GalaxyMapQoL.selectIcon(i)
                         break
@@ -306,10 +305,6 @@ function GalaxyMapQoL.galaxyMapQoL_onShowGalaxyMap()
     if isServerUsed and warZoneCheckBox.checked then
         invokeServerFunction("syncWarZones")
     end
-
-    --[[if isServerUsed and alliance then
-        invokeServerFunction("sync") -- sync data
-    end]]
 end
 
 function GalaxyMapQoL.galaxyMapQoL_onHideGalaxyMap()
@@ -377,7 +372,7 @@ function GalaxyMapQoL.galaxyMapQoL_onMapRenderAfterLayers()
     end
 
     -- make search bar more visible
-    drawBorder(Rect(148, 9, 450, 40), borderColor)
+    --drawBorder(Rect(148, 9, 450, 40), borderColor)
 
     GalaxyMapQoL.drawDistanceToCenter(map)
 end

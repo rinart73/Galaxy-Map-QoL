@@ -26,7 +26,7 @@ end
 -- PREDEFINED --
 
 function initialize()
-    Log.Debug("Galaxy script initialized")
+    Log:Debug("Galaxy script initialized")
 end
 
 function getUpdateInterval()
@@ -37,7 +37,7 @@ function update(timeStep)
     local now = appTime()
     for allianceIndex, data in pairs(allianceData) do
         if data.lastUsed + 300 < now then -- unload data that wasn't accessed for 5 minutes
-            Log.Debug("Unloading alliance %i (unused for 5 minutes)", allianceIndex)
+            Log:Debug("Unloading alliance %i (unused for 5 minutes)", allianceIndex)
             Azimuth.saveConfig("AllianceData_"..allianceIndex, { allianceIcons = data.allianceIcons, allianceIconsCount = data.allianceIconsCount }, nil, false, "GalaxyMapQoL")
 
             allianceData[allianceIndex] = nil
@@ -47,7 +47,7 @@ end
 
 function secure()
     for allianceIndex, data in pairs(allianceData) do
-        Log.Debug("Unloading alliance %i (shutdown)", allianceIndex)
+        Log:Debug("Unloading alliance %i (shutdown)", allianceIndex)
         Azimuth.saveConfig("AllianceData_"..allianceIndex, { allianceIcons = data.allianceIcons, allianceIconsCount = data.allianceIconsCount }, nil, false, "GalaxyMapQoL")
     end
     return { warZones = warZoneData }
@@ -82,7 +82,7 @@ function getAllianceData(allianceIndex, lastRequest)
     local data = allianceData[allianceIndex]
     data.lastUsed = appTime()
 
-    Log.Debug("Galaxy - getAllianceData: %f > %f", data.lastUpdated, lastRequest)
+    Log:Debug("Galaxy - getAllianceData: %f > %f", data.lastUpdated, lastRequest)
     if data.lastUpdated > lastRequest then
         return data.allianceIcons, data.lastUsed
     end
@@ -131,27 +131,8 @@ function getWarZoneData()
     return warZoneData
 end
 
---[[function getWarZoneData(knownArray) -- can pass nil/false as argument to get all warzone sectors
-    local knownSectors
-    if knownArray then
-        Log.Debug("getWarZoneData for sectors: %s", knownArray)
-        knownSectors = {}
-        for _, s in ipairs(knownArray) do
-            knownSectors[s[1]..'_'..s[2] ] = true
-        end
-        knownArray = true
-    end
-    local resultArr = {}
-    for k, coords in pairs(warZoneData) do
-        if (not knownArray or knownSectors[k]) and coords then
-            resultArr[#resultArr+1] = coords
-        end
-    end
-    return resultArr
-end]]
-
 function setWarZoneData(x, y, state)
-    Log.Debug("Galaxy - setWarZoneData: (%i:%i) -> %s", x, y, tostring(state == true))
+    Log:Debug("Galaxy - setWarZoneData: (%i:%i) -> %s", x, y, tostring(state == true))
     if state == true then
         warZoneData[x..'_'..y] = {x, y}
     else

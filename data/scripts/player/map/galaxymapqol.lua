@@ -69,7 +69,7 @@ function GalaxyMapQoL.syncWarZones()
         warZoneTimestamp = now
         local status, syncedData = Galaxy():invokeFunction("galaxymapqol.lua", "getWarZoneData")
         if status ~= 0 or syncedData == nil then
-            Log.Error("syncWarZones failed: %s, %s", tostring(status), tostring(syncedData == nil))
+            Log:Error("syncWarZones failed: %s, %s", tostring(status), tostring(syncedData == nil))
         else
             local knownWarzones = {}
             local uniqueSectors = {}
@@ -89,22 +89,11 @@ function GalaxyMapQoL.syncWarZones()
                     end
                 end
             end
-            Log.Debug("syncWarZones: %s", knownWarzones)
+            Log:Debug("syncWarZones: %s", knownWarzones)
             invokeClientFunction(player, "syncWarZones", knownWarzones)
         end
-        --[[-- get rid of ivec objects
-        local knownCoords = {}
-        for i, vec in ipairs({player:getKnownSectorCoordinates()}) do
-            knownCoords[i] = {vec.x, vec.y}
-        end
-        local status, syncedData = Galaxy():invokeFunction("galaxymapqol.lua", "getWarZoneData", knownCoords)
-        if status ~= 0 or syncedData == nil then
-            Log.Error("syncWarZones failed: %s, %s", tostring(status), tostring(syncedData == nil))
-        else
-            invokeClientFunction(player, "syncWarZones", syncedData)
-        end]]
     else
-        Log.Debug("syncWarZones - request ignored due to the time restrictions")
+        Log:Debug("syncWarZones - request ignored due to the time restrictions")
     end
 end
 callable(GalaxyMapQoL, "syncWarZones")
@@ -119,16 +108,16 @@ function GalaxyMapQoL.requestAllianceData()
     if player.alliance then
         local status, syncedData, newTimestamp = Galaxy():invokeFunction("galaxymapqol.lua", "getAllianceData", player.allianceIndex, allianceLastRequest)
         if status ~= 0 or syncedData == nil or newTimestamp == nil then
-            Log.Error("requestAllianceData failed: %s, %s, %s", tostring(status), tostring(syncedData == nil), tostring(newTimestamp))
+            Log:Error("requestAllianceData failed: %s, %s, %s", tostring(status), tostring(syncedData == nil), tostring(newTimestamp))
             isAllianceDataSynced = true
         else
             allianceLastRequest = newTimestamp
             if syncedData ~= false then
-                Log.Debug("requestAllianceData: %s, %f", syncedData, allianceLastRequest)
+                Log:Debug("requestAllianceData: %s, %f", syncedData, allianceLastRequest)
                 allianceIcons = syncedData
                 isAllianceDataSynced = false
             else
-                Log.Debug("requestAllianceData: false, %f", allianceLastRequest)
+                Log:Debug("requestAllianceData: false, %f", allianceLastRequest)
             end
         end
     end
@@ -191,10 +180,10 @@ function GalaxyMapQoL.setSectorIcon(isAlliance, x, y, icon, color)
         end
         local status, hasIcon, newTimestamp = Galaxy():invokeFunction("galaxymapqol.lua", "setAllianceData", player.index, player.allianceIndex, x, y, icon, color, allianceLastRequest)
         if status ~= 0 or newTimestamp == nil then
-            Log.Error("setSectorIcon (alliance) failed: %s, %s, %s", tostring(status), tostring(hasIcon), tostring(newTimestamp))
+            Log:Error("setSectorIcon (alliance) failed: %s, %s, %s", tostring(status), tostring(hasIcon), tostring(newTimestamp))
         elseif hasIcon ~= nil then
             allianceLastRequest = newTimestamp
-            Log.Debug("setSectorIcon (alliance): %s, %f", tostring(hasIcon), allianceLastRequest)
+            Log:Debug("setSectorIcon (alliance): %s, %f", tostring(hasIcon), allianceLastRequest)
             if hasIcon then
                 invokeClientFunction(player, "sync", false, nil, {x, y, icon, color})
             else
