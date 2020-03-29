@@ -188,7 +188,7 @@ function GalaxyMapQoL.initUI()
 end
 
 function GalaxyMapQoL.getUpdateInterval()
-    if isEditIconShown or colorPicker.visible then return end -- every tick
+    if isEditIconShown or (colorPicker and colorPicker.visible) then return end -- every tick
     return 0.5
 end
 
