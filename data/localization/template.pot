@@ -1,50 +1,58 @@
-# ========== Galaxy Map QoL\data\scripts\galaxy\galaxymapqol.lua ==========
-#: Galaxy Map QoL\data\scripts\galaxy\galaxymapqol.lua:
-#: Galaxy Map QoL\data\scripts\player\map\galaxymapqol.lua:
+# ========== C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/galaxy/galaxymapqol.lua ==========
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/galaxy/galaxymapqol.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/player/map/galaxymapqol.lua:
 msgid "Maximum amount of icons reached"
 msgstr ""
 
 
-# ========== Galaxy Map QoL\data\scripts\lib\galaxymapqolclient.lua ==========
-#: Galaxy Map QoL\data\scripts\lib\galaxymapqolclient.lua:
+# ========== C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua ==========
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
 msgid "Edit icon"
 msgstr ""
 
-#: Galaxy Map QoL\data\scripts\lib\galaxymapqolclient.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
 msgid "Hide icons"
 msgstr ""
 
-#: Galaxy Map QoL\data\scripts\lib\galaxymapqolclient.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
 msgid "Show overlay"
 msgstr ""
 
-#: Galaxy Map QoL\data\scripts\lib\galaxymapqolclient.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
 msgid "Resources"
 msgstr ""
 
-#: Galaxy Map QoL\data\scripts\lib\galaxymapqolclient.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
 msgid "Bosses"
 msgstr ""
 
-#: Galaxy Map QoL\data\scripts\lib\galaxymapqolclient.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
 msgid "Edit selected color"
 msgstr ""
 
-#: Galaxy Map QoL\data\scripts\lib\galaxymapqolclient.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
 msgid "Hazard Zones"
 msgstr ""
 
-#: Galaxy Map QoL\data\scripts\lib\galaxymapqolclient.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
+msgid "Faction Colors"
+msgstr ""
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
+msgid "EXPERIMENTAL: Highlights faction territories with various colors allowing to distinguish them from other nearby factions.\nFactions won't have unique colors!"
+msgstr ""
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
 msgid "${x} : ${y} (dist: ${num})"
 msgstr ""
 
-#: Galaxy Map QoL\data\scripts\lib\galaxymapqolclient.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
 msgid "\n Hazard Zone"
 msgstr ""
 
 
-# ========== Galaxy Map QoL\data\scripts\player\map\galaxymapqol.lua ==========
-#: Galaxy Map QoL\data\scripts\player\map\galaxymapqol.lua:
+# ========== C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/player/map/galaxymapqol.lua ==========
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/player/map/galaxymapqol.lua:
 msgid "Incorrect icon"
 msgstr ""
 

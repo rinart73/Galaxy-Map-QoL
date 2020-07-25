@@ -9,9 +9,10 @@ local Integration = include("GalaxyMapQoLIntegration")
 
 GalaxyMapQoL = {}
 
-local editIconBtn, iconsFactionComboBox, showOverlayComboBox, legendRows, editIconWindow, coordinatesLabel, editIconScrollFrame, colorSelector, colorPictures, colorPicker, iconSelector, warZoneCheckBox -- UI
+local editIconBtn, iconsFactionComboBox, showOverlayComboBox, legendRows, editIconWindow, coordinatesLabel, editIconScrollFrame, colorSelector, colorPictures, colorPicker, iconSelector, warZoneCheckBox, factionColorsCheckBox, playerIconsContainer, allianceIconsContainer -- UI
 -- client
-local Config, customNamespace, sectorsPlayer, sectorsAlliance, isServerUsed, isEditIconShown, iconsFactionBoxHasAlliance, iconPictures, selectedIcon, editedX, editedY, materialDistances, distToCenter, selectedColorIndex
+local Config, customNamespace, sectorsPlayer, sectorsAlliance, isServerUsed, isEditIconShown, iconsFactionBoxHasAlliance, iconPictures, selectedIcon, editedX, editedY, materialDistances, distToCenter, selectedColorIndex, factionColorsIsRunning, factionsColorsCache
+local factionColorsUpdated = -30
 local overlays = {}
 local warZoneData = {}
 local icons = {"empty", "adopt", "alliance", "anchor", "bag", "bug-report", "cattle", "checkmark", "clockwise-rotation", "cog", "crew", "cross-mark", "diamonds", "domino-mask", "electric", "fighter", "look-at", "flying-flag", "halt", "health-normal", "hourglass", "inventory", "move", "round-star", "select", "shield", "trash-can", "unchecked", "vortex"}
@@ -25,6 +26,9 @@ local bossDistances = {
   { min = 150, max = 240, name = "Mobile Energy Lab"%_t, color = ColorARGB(0.7, 0.5, 0.5, 1), noDrawMin = true },
   { min = 150, max = 180, name = "The 4", color = ColorARGB(0.7, 1, 1, 0), minExtraColor = ColorARGB(0.7, 0.5, 0.5, 1) }
 }
+local playerMapIcons = {}
+local allianceMapIcons = {}
+local GT112 = GameVersion() >= Version(1, 1, 2)
 local galaxyMapQoL_updateClient -- extended functions
 
 
@@ -79,6 +83,8 @@ function GalaxyMapQoL.initialize()
     player:registerCallback("onSelectMapCoordinates", "galaxyMapQoL_onEditIconBtnPressed")
     player:registerCallback("onMapRenderAfterLayers", "galaxyMapQoL_onMapRenderAfterLayers")
 
+    player:registerCallback("onSectorEntered", "galaxyMapQoL_onSectorEntered")
+
     if not customNamespace then
         invokeServerFunction("sync", true)
     end
@@ -86,6 +92,11 @@ end
 
 function GalaxyMapQoL.initUI()
     local map = GalaxyMap()
+
+    playerIconsContainer = map:createContainer()
+    allianceIconsContainer = map:createContainer()
+    allianceIconsContainer.visible = false
+
     local container = map:createContainer()
     editIconBtn = container:createButton(Rect(460, 50, 660, 80), "Edit icon"%_t, "galaxyMapQoL_onEditIconBtnPressed")
 
@@ -171,13 +182,19 @@ function GalaxyMapQoL.initUI()
     btn.maxTextSize = 14
     btn = editIconWindow:createButton(splitter.right, "Cancel"%_t, "galaxyMapQoL_onEditIconCancelBtnPressed")
     btn.maxTextSize = 14
-    
+
     -- checkbox for war zones
+    local rowY = 170
     if not customNamespace then
-        warZoneCheckBox = container:createCheckBox(Rect(150, 170, 300, 190), "Hazard Zones"%_t, "onWarZoneCheckBoxChecked")
+        warZoneCheckBox = container:createCheckBox(Rect(150, rowY, 370, rowY + 20), "Hazard Zones"%_t, "onWarZoneCheckBoxChecked")
         warZoneCheckBox.captionLeft = false
         warZoneCheckBox:setCheckedNoCallback(true)
+        rowY = rowY + 30
     end
+
+    factionColorsCheckBox = container:createCheckBox(Rect(150, rowY, 370, rowY + 20), "Faction Colors"%_t, "galaxyMapQoL_onFactionColorsCheckBoxChecked")
+    factionColorsCheckBox.tooltip = "EXPERIMENTAL: Highlights faction territories with various colors allowing to distinguish them from other nearby factions.\nFactions won't have unique colors!"%_t
+    factionColorsCheckBox.captionLeft = false
 
     -- color picker
     if not customNamespace then
@@ -188,7 +205,7 @@ function GalaxyMapQoL.initUI()
 end
 
 function GalaxyMapQoL.getUpdateInterval()
-    if isEditIconShown or (colorPicker and colorPicker.visible) then return end -- every tick
+    if isEditIconShown or (colorPicker and colorPicker.visible) then return 0 end -- every tick
     return 0.5
 end
 
@@ -224,25 +241,31 @@ function GalaxyMapQoL.sync(isFullSync, playerData, allianceData)
     if playerData then
         if isFullSync then
             isServerUsed = true
-            sectorsPlayer = playerData
+            sectorsPlayer = playerData -- full update
+            GalaxyMapQoL.updateMapIcons()
             if not sectorsAlliance then
                 sectorsAlliance = {}
             end
         else -- partial sync
             if #playerData == 2 then -- remove
                 sectorsPlayer[playerData[1].."_"..playerData[2]] = nil
+                GalaxyMapQoL.updateMapIcons() -- full update
             else
                 sectorsPlayer[playerData[1].."_"..playerData[2]] = playerData
+                GalaxyMapQoL.updateMapIcons(false, playerData) -- update an icon
             end
         end
-    else
+    else -- alliance
         if isFullSync then
             sectorsAlliance = allianceData
+            GalaxyMapQoL.updateMapIcons(true) -- full update
         else
             if #allianceData == 2 then -- remove
                 sectorsAlliance[allianceData[1].."_"..allianceData[2]] = nil
+                GalaxyMapQoL.updateMapIcons(true)
             else
                 sectorsAlliance[allianceData[1].."_"..allianceData[2]] = allianceData
+                GalaxyMapQoL.updateMapIcons(false, allianceData) -- update an icon
             end
         end
     end
@@ -282,6 +305,7 @@ end
 function GalaxyMapQoL.galaxyMapQoL_onShowGalaxyMap()
     if not isServerUsed and not sectorsPlayer then -- mod isn't installed on server side, using local storage
         sectorsPlayer = Config.playerIcons
+        GalaxyMapQoL.updateMapIcons() -- full update
         sectorsAlliance = {}
     end
 
@@ -296,14 +320,32 @@ function GalaxyMapQoL.galaxyMapQoL_onShowGalaxyMap()
         iconsFactionComboBox:addEntry("Hide icons"%_t)
         iconsFactionComboBox:addEntry("Player"%_t)
         iconsFactionComboBox:setSelectedIndexNoCallback(prevIndex == 2 and 1 or prevIndex)
+        if prevIndex == 2 then
+            allianceIconsContainer.visible = false
+            playerIconsContainer.visible = true
+        end
         sectorsAlliance = {}
         iconsFactionBoxHasAlliance = false
+        GalaxyMapQoL.updateMapIcons(true)
     end
     -- enable/disable 'edit icons' button
     GalaxyMapQoL.galaxyMapQoL_onIconsFactionBoxChanged()
 
     if isServerUsed and warZoneCheckBox.checked then
         invokeServerFunction("syncWarZones")
+    end
+
+    if factionColorsCheckBox.checked then
+        if factionsColorsCache then
+            local map = GalaxyMap()
+            map:clearCustomColors()
+            map:setCustomColors(factionsColorsCache)
+            map.showFactionLayer = false
+            map.showCustomColorLayer = true
+        end
+        if (appTime() - factionColorsUpdated) >= 30 then
+            GalaxyMapQoL.startFactionColorsCalculation()
+        end
     end
 end
 
@@ -321,33 +363,41 @@ function GalaxyMapQoL.galaxyMapQoL_onMapRenderAfterLayers()
     local map = GalaxyMap()
 
     local half, topX, bottomY, bottomX, topY
+    local renderer
 
-    -- draw icons
-    local iconFaction = iconsFactionComboBox.selectedIndex
-    if iconFaction ~= 0 then
-        local renderer = UIRenderer()
-        half = (map:getCoordinatesScreenPosition(ivec2(1, 0)) - map:getCoordinatesScreenPosition(ivec2(0, 0))) * 0.5
-        topX, bottomY = map:getCoordinatesAtScreenPosition(vec2(0, 0))
-        bottomX, topY = map:getCoordinatesAtScreenPosition(getResolution())
+    if not GT112 then -- < 1.1.2 old drawing
+        -- draw icons
+        local iconFaction = iconsFactionComboBox.selectedIndex
+        if iconFaction ~= 0 then
+            renderer = UIRenderer()
+            half = (map:getCoordinatesScreenPosition(ivec2(1, 0)) - map:getCoordinatesScreenPosition(ivec2(0, 0))) * 0.5
+            topX, bottomY = map:getCoordinatesAtScreenPosition(vec2(0, 0))
+            bottomX, topY = map:getCoordinatesAtScreenPosition(getResolution())
 
-        local sectors = iconFaction == 1 and sectorsPlayer or sectorsAlliance
-        local sx, sy
-        for _, sector in pairs(sectors) do
-            if sector[1] >= topX and sector[1] <= bottomX and sector[2] >= topY and sector[2] <= bottomY then
-                sx, sy = map:getCoordinatesScreenPosition(ivec2(sector[1], sector[2]))
-                renderer:renderIcon(vec2(sx - half, sy - half), vec2(sx + half, sy + half), ColorInt(sector[4]), "data/textures/icons/galaxymapqol/"..sector[3]..".png")
+            local sectors = iconFaction == 1 and sectorsPlayer or sectorsAlliance
+            local sx, sy
+            for _, sector in pairs(sectors) do
+                if sector[1] >= topX and sector[1] <= bottomX and sector[2] >= topY and sector[2] <= bottomY then
+                    sx, sy = map:getCoordinatesScreenPosition(ivec2(sector[1], sector[2]))
+                    renderer:renderIcon(vec2(sx - half, sy - half), vec2(sx + half, sy + half), ColorInt(sector[4]), "data/textures/icons/galaxymapqol/"..sector[3]..".png")
+                end
             end
         end
+    end
 
-        -- draw overlay
-        local overlayIndex = showOverlayComboBox.selectedIndex
-        if overlayIndex > 0 then
-            local overlay = overlays[overlayIndex]
-            if overlay and overlay.onRender and GalaxyMapQoL[overlay.onRender] then
-                GalaxyMapQoL[overlay.onRender](renderer)
-            end
+    -- draw overlay
+    local overlayIndex = showOverlayComboBox.selectedIndex
+    if overlayIndex > 0 then
+        if not renderer then
+            renderer = UIRenderer()
         end
-        
+        local overlay = overlays[overlayIndex]
+        if overlay and overlay.onRender and GalaxyMapQoL[overlay.onRender] then
+            GalaxyMapQoL[overlay.onRender](renderer)
+        end
+    end
+
+    if renderer then
         renderer:display()
     end
 
@@ -371,9 +421,6 @@ function GalaxyMapQoL.galaxyMapQoL_onMapRenderAfterLayers()
         renderer:display()
     end
 
-    -- make search bar more visible
-    --drawBorder(Rect(148, 9, 450, 40), borderColor)
-
     GalaxyMapQoL.drawDistanceToCenter(map)
 end
 
@@ -393,6 +440,37 @@ function GalaxyMapQoL.drawDistanceToCenter(map)
         if distToCenter.passable then
             local mx, my = map:getCoordinatesScreenPosition(ivec2(x, y))
             drawText(distToCenter.text, mx + 24, my - 15, distColor, 13, 0, 0, 1)
+        end
+    end
+end
+
+function GalaxyMapQoL.updateMapIcons(isAlliance, sectorData)
+    if not GT112 then return end
+
+    local container = isAlliance and allianceIconsContainer or playerIconsContainer
+    local mapIcons = isAlliance and allianceMapIcons or playerMapIcons
+    if sectorData then -- add/update icon
+        local mapIcon = mapIcons[sectorData[1].."_"..sectorData[2]]
+        if mapIcon then -- update
+            mapIcon.icon = "data/textures/icons/galaxymapqol/map/"..sectorData[3]..".png"
+            mapIcon.color = ColorInt(sectorData[4])
+        else -- create
+            mapIcons[sectorData[1].."_"..sectorData[2]] = container:createMapIcon("data/textures/icons/galaxymapqol/map/"..sectorData[3]..".png", ivec2(sectorData[1], sectorData[2]))
+            mapIcons[sectorData[1].."_"..sectorData[2]].color = ColorInt(sectorData[4])
+        end
+    else -- remake all icons
+        if isAlliance then
+            allianceMapIcons = {}
+            mapIcons = allianceMapIcons
+        else
+            playerMapIcons = {}
+            mapIcons = allianceMapIcons
+        end
+        container:clear()
+        local sectors = isAlliance and sectorsAlliance or sectorsPlayer
+        for key, sector in pairs(sectors) do
+            mapIcons[key] = container:createMapIcon("data/textures/icons/galaxymapqol/map/"..sector[3]..".png", ivec2(sector[1], sector[2]))
+            mapIcons[key].color = ColorInt(sector[4])
         end
     end
 end
@@ -456,6 +534,8 @@ function GalaxyMapQoL.galaxyMapQoL_onIconsFactionBoxChanged()
     local iconFaction = iconsFactionComboBox.selectedIndex
     if iconFaction == 0 then
         editIconBtn.active = false
+        playerIconsContainer.visible = false
+        allianceIconsContainer.visible = false
     elseif iconFaction == 2 then
         local player = Player()
         local alliance = player.alliance
@@ -465,10 +545,14 @@ function GalaxyMapQoL.galaxyMapQoL_onIconsFactionBoxChanged()
             editIconBtn.active = true
         end
         if isServerUsed and alliance then
+            playerIconsContainer.visible = false
+            allianceIconsContainer.visible = true
             invokeServerFunction("sync") -- sync alliance data
         end
-    else
+    else -- 1
         editIconBtn.active = true
+        playerIconsContainer.visible = true
+        allianceIconsContainer.visible = false
     end
 end
 
@@ -550,12 +634,14 @@ function GalaxyMapQoL.galaxyMapQoL_onEditIconApplyBtnPressed()
             invokeServerFunction("setSectorIcon", iconFaction == 2, editedX, editedY)
         else
             sectorsPlayer[editedX.."_"..editedY] = nil
+            GalaxyMapQoL.updateMapIcons() -- full update
         end
     else -- add/change icon
         if isServerUsed then
             invokeServerFunction("setSectorIcon", iconFaction == 2, editedX, editedY, icons[selectedIcon], colorPictures[selectedColorIndex].color:toInt())
         else
             sectorsPlayer[editedX.."_"..editedY] = { editedX, editedY, icons[selectedIcon], colorPictures[selectedColorIndex].color:toInt() }
+            GalaxyMapQoL.updateMapIcons(false, sectorsPlayer[editedX.."_"..editedY]) -- add/update one icon
         end
     end
 end
@@ -570,6 +656,44 @@ function GalaxyMapQoL.onWarZoneCheckBoxChecked()
     if isServerUsed and warZoneCheckBox.checked then
         invokeServerFunction("syncWarZones")
     end
+end
+
+function GalaxyMapQoL.galaxyMapQoL_onFactionColorsCheckBoxChecked()
+    local map = GalaxyMap()
+    if factionColorsCheckBox.checked then
+        if factionsColorsCache then
+            map:clearCustomColors()
+            map:setCustomColors(factionsColorsCache)
+            map.showFactionLayer = false
+            map.showCustomColorLayer = true
+        end
+        if (appTime() - factionColorsUpdated) >= 30 then
+            GalaxyMapQoL.startFactionColorsCalculation()
+        end
+    else
+        map:clearCustomColors()
+        map.showFactionLayer = true
+        map.showCustomColorLayer = false
+    end
+end
+
+function GalaxyMapQoL.galaxyMapQoL_onSectorEntered(playerIndex, x, y, sectorChangeType)
+    factionColorsUpdated = 0
+end
+
+function GalaxyMapQoL.onFactionColorsCalculated(sectors, tookTime, memoryUsage)
+    --print("[DEBUG][GalaxyMapQoL]: onFactionColorsCalculated, time %s, memoryUsage %.0f", tookTime, memoryUsage)
+
+    factionsColorsCache = sectors
+    if factionColorsCheckBox.checked then
+        local map = GalaxyMap()
+        map:clearCustomColors()
+        map:setCustomColors(sectors)
+        map.showFactionLayer = false
+        map.showCustomColorLayer = true
+    end
+    factionColorsUpdated = appTime()
+    factionColorsIsRunning = false
 end
 
 function GalaxyMapQoL.selectColor(index)
@@ -595,7 +719,7 @@ function GalaxyMapQoL.drawCircle(renderer, radius, color, layer, color2, colorSw
     side = map:getCoordinatesScreenPosition(ivec2(1, 0)) - side
     local ex = math.floor(radius)
     local bx, by = -ex, 0
-    local sx, sy = map:getCoordinatesScreenPosition(ivec2(bx --[[+ centerX]], by --[[+ centerY]]))
+    local sx, sy = map:getCoordinatesScreenPosition(ivec2(bx, by))
     local cx1, cy1, cx2, cy2, tcy1, tcy2
     local y, k
     local x1, y1, ak = -ex, 0, 0
@@ -653,6 +777,176 @@ function GalaxyMapQoL.drawCircle(renderer, radius, color, layer, color2, colorSw
     end
 end
 
+function GalaxyMapQoL.startFactionColorsCalculation()
+    if factionColorsIsRunning then return end
+
+    local code = [[
+        package.path = package.path .. ";data/scripts/lib/?.lua"
+
+        local PassageMap = include ("passagemap")
+
+        function run(galaxy)
+            local memoryUsage = collectgarbage("count") * 1024
+            local t = HighResolutionTimer()
+            t:start()
+
+            local passageMap = PassageMap(GameSeed())
+            local player = Player()
+            local sectors
+            if player.alliance and GalaxyMap().showAllianceInfo then
+                sectors = {}
+                for _, view in ipairs({player.alliance:getKnownSectors()}) do
+                    if view.factionIndex > 0 and view.influence > 0 then
+                        local x, y = view:getCoordinates()
+                        sectors[ivec2(x, y)] = view
+                    end
+                end
+                for _, view in ipairs({player:getKnownSectors()}) do
+                    if view.factionIndex > 0 and view.influence > 0 then
+                        local x, y = view:getCoordinates()
+                        if not sectors[ivec2(x, y)] then
+                            sectors[ivec2(x, y)] = view
+                        end
+                    end
+                end
+            else
+                sectors = {player:getKnownSectors()}
+            end
+            local factions = {}
+            local checkedSectors = {}
+            for _, view in pairs(sectors) do
+                if view.factionIndex > 0 then
+                    local factionData = factions[view.factionIndex]
+                    if not factionData then
+                        factionData = { sectors = {} }
+                        factions[view.factionIndex] = factionData
+                    end
+                    if not factionData.xy and not factionData.count then
+                        local faction = Faction(view.factionIndex)
+                        if faction.homeSectorUnknown then
+                            factionData.x = 0
+                            factionData.y = 0
+                            factionData.count = 0
+                        else
+                            local x, y = faction:getHomeSectorCoordinates()
+                            factionData.xy = vec2(x, y)
+                        end
+                    end
+                    local x, y = view:getCoordinates()
+                    if factionData.count then
+                        factionData.x = factionData.x + x
+                        factionData.y = factionData.y + y
+                        factionData.count = factionData.count + 1
+                    end
+                    factionData.sectors[#factionData.sectors+1] = ivec2(x, y)
+                    -- Find influenced sectors
+                    if view.influence > 0 then
+                        local radius = math.sqrt(view.influence / math.pi)
+                        for i = 0, radius do
+                            local posEnd = math.floor(math.sqrt(radius * radius - i * i) - 1.00001)
+                            for j = 1, posEnd + 1 do
+                                local coords = { {x + i, y + j}, {x + j, y - i}, {x - i, y - j}, {x - j, y + i} }
+                                for _, pair in ipairs(coords) do
+                                    local n = pair[1]
+                                    local m = pair[2]
+                                    if n > -499 and n < 500 and m > -499 and m < 500 and not checkedSectors[n.."_"..m] then
+                                        checkedSectors[n.."_"..m] = true
+                                        if passageMap:passable(n, m) and not player:knowsSector(n, m) then
+                                            local factionIndex = galaxy:getControllingFaction(n, m)
+                                            if factionIndex then
+                                                local factionData = factions[view.factionIndex]
+                                                if not factionData then
+                                                    factions[view.factionIndex] = { sectors = { ivec2(n, m) } }
+                                                else
+                                                    factionData.sectors[#factionData.sectors+1] = ivec2(n, m)
+                                                end
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+
+            checkedSectors = nil
+
+            local colors = {
+              { c = ColorInt(0x4dFF0000), factions = {} }, -- Red
+              { c = ColorInt(0x4d00FFFF), factions = {} }, -- Cyan
+              { c = ColorInt(0x4d0000FF), factions = {} }, -- Blue
+              { c = ColorInt(0x4d00FF00), factions = {} }, -- Green
+              { c = ColorInt(0x4dFFFF00), factions = {} }, -- Yellow
+              { c = ColorInt(0x4dFF00FF), factions = {} }, -- Magenta
+              { c = ColorInt(0x4dA70000), factions = {} }, -- Maroon
+              { c = ColorInt(0x4d008000), factions = {} }, -- Dark green
+              { c = ColorInt(0x4d00006E), factions = {} }, -- Navy
+              { c = ColorInt(0x4dFF8000), factions = {} }, -- Orange
+              { c = ColorInt(0x4dFF3277), factions = {} }, -- Rose
+              { c = ColorInt(0x4d007FFF), factions = {} }, -- Light blue
+              { c = ColorInt(0x4d7FFF7F), factions = {} }, -- Light green
+              { c = ColorInt(0x4d808000), factions = {} }, -- Frog
+              { c = ColorInt(0x4d6E006E), factions = {} }, -- Dark violet
+              { c = ColorInt(0x4d008080), factions = {} }, -- Sea waves
+              { c = ColorInt(0x4d864C12), factions = {} }, -- Brown
+              { c = ColorInt(0x4d90C8FF), factions = {} }, -- Ice
+              { c = ColorInt(0x4dffffff), factions = {} }, -- White
+              { c = ColorInt(0x4d8D1CFF), factions = {} }, -- Purple
+              { c = ColorInt(0x4d005F3F), factions = {} }, -- Teal
+              { c = ColorInt(0x4d808080), factions = {} }, -- Gray
+            }
+            -- Distribute colors across factions
+            sectors = {}
+            for index, factionData in pairs(factions) do
+                if factionData.count then -- find average coordinates for homeless factions
+                    factionData.xy = vec2(factionData.x / factionData.count, factionData.y / factionData.count)
+                    factionData.x = nil
+                    factionData.y = nil
+                    factionData.count = nil
+                end
+                -- find furthest color
+                local color
+                local maxDist = 0
+                for _, colorData in ipairs(colors) do
+                    local minDist = math.huge
+                    if #colorData.factions > 0 then -- find closest faction
+                        for _, coloredFaction in ipairs(colorData.factions) do
+                            local dist = distance(coloredFaction.xy, factionData.xy)
+                            if dist < minDist then
+                                minDist = dist
+                            end
+                        end
+                        if minDist > maxDist then
+                            maxDist = minDist
+                            color = colorData
+                        end
+                    else -- color was never used before, use it immediately
+                        color = colorData
+                    end
+                    if minDist == math.huge then break end
+                end
+                color.factions[#color.factions+1] = factionData
+                for _, sector in ipairs(factionData.sectors) do
+                    sectors[sector] = color.c
+                end
+            end
+
+            galaxy = nil
+
+            t:stop()
+            t = t.secondsStr
+            memoryUsage = collectgarbage("count") * 1024 - memoryUsage
+
+            return sectors, t, memoryUsage
+        end
+    ]]
+
+    async("onFactionColorsCalculated", code, Galaxy())
+
+    factionColorsIsRunning = true
+end
+
 function GalaxyMapQoL.initOtherNamespace(namespace)
     customNamespace = namespace
 
@@ -673,6 +967,8 @@ function GalaxyMapQoL.initOtherNamespace(namespace)
     namespace.galaxyMapQoL_onColorPickerApplyBtnPressed = GalaxyMapQoL.galaxyMapQoL_onColorPickerApplyBtnPressed
     namespace.galaxyMapQoL_onEditIconApplyBtnPressed = GalaxyMapQoL.galaxyMapQoL_onEditIconApplyBtnPressed
     namespace.galaxyMapQoL_onEditIconCancelBtnPressed = GalaxyMapQoL.galaxyMapQoL_onEditIconCancelBtnPressed
+    namespace.galaxyMapQoL_onFactionColorsCheckBoxChecked = GalaxyMapQoL.galaxyMapQoL_onFactionColorsCheckBoxChecked
+    namespace.galaxyMapQoL_onSectorEntered = GalaxyMapQoL.galaxyMapQoL_onSectorEntered
 
     GalaxyMapQoL.initialize()
 end
