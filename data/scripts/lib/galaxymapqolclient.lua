@@ -22,10 +22,10 @@ local distColor = ColorRGB(1, 1, 1)
 local borderColor = ColorRGB(0.5, 0.5, 0.5)
 local warZoneColor = ColorRGB(1, 0.1, 0)
 local bossDistances = {
-  { min = 380, max = 430, name = "Boss Swoks ${num}"%_t % {num = ""}, color = ColorARGB(0.7, 1, 0, 0) },
-  { min = 280, max = 340, name = "The AI"%_t, color = ColorARGB(0.7, 0, 1, 0) },
-  { min = 150, max = 240, name = "Mobile Energy Lab"%_t, color = ColorARGB(0.7, 0.5, 0.5, 1), noDrawMin = true },
-  { min = 150, max = 180, name = "The 4", color = ColorARGB(0.7, 1, 1, 0), minExtraColor = ColorARGB(0.7, 0.5, 0.5, 1) }
+  { min = 350, max = 430, name = "Boss Swoks ${num}"%_t % {num = ""}, color = ColorARGB(0.7, 1, 0, 0) },
+  { min = 240, max = 340, name = "The AI"%_t, color = ColorARGB(0.7, 0, 1, 0) },
+  { min = 150, max = 240, name = "Mobile Energy Lab"%_t, color = ColorARGB(0.7, 0.5, 0.5, 1) },
+  { min = 150, max = 180, name = "The 4", color = ColorARGB(0.7, 1, 1, 0) }
 }
 local playerMapIcons = {}
 local allianceMapIcons = {}
@@ -108,8 +108,8 @@ function GalaxyMapQoL.initUI()
 
     showOverlayComboBox = container:createComboBox(Rect(460, 125, 660, 150), "galaxyMapQoL_onShowOverlayBoxChanged")
     showOverlayComboBox:addEntry("Show overlay"%_t)
-    GalaxyMapQoL.addOverlay("Resources", "Resources"%_t, "onResourcesOverlaySelected", "onResourcesOverlayRendered")
-    GalaxyMapQoL.addOverlay("Bosses", "Bosses"%_t, "onBossesOverlaySelected", "onBossesOverlayRendered")
+    GalaxyMapQoL.addOverlay("Resources", "Resources"%_t, "onResourcesOverlaySelected")
+    GalaxyMapQoL.addOverlay("Bosses", "Bosses"%_t, "onBossesOverlaySelected")
 
     local lister = UIVerticalLister(Rect(670, 50, 770, 50), 5, 0)
     local partitions, picture
@@ -355,6 +355,7 @@ function GalaxyMapQoL.galaxyMapQoL_onShowGalaxyMap()
         end
     end
 
+    GalaxyMapQoL.galaxyMapQoL_onShowOverlayBoxChanged() -- update overlays
     GalaxyMapQoL.onLockRadarCheckBoxChecked() -- update radar
 end
 
@@ -506,28 +507,6 @@ function GalaxyMapQoL.updateMapIcons(isAlliance, sectorData)
     end
 end
 
-function GalaxyMapQoL.onResourcesOverlayRendered(renderer)
-    local color
-    for i, dist in ipairs(materialDistances) do
-        color = Material(i).color
-        color.a = 0.7
-        GalaxyMapQoL.drawCircle(renderer, materialDistances[i], color, 1)
-    end
-end
-
-function GalaxyMapQoL.onBossesOverlayRendered(renderer)
-    for _, boss in ipairs(bossDistances) do
-        if not boss.noDrawMin then
-            if not boss.minExtraColor then
-                GalaxyMapQoL.drawCircle(renderer, boss.min, boss.color, 1)
-            else
-                GalaxyMapQoL.drawCircle(renderer, boss.min, boss.color, 1, boss.minExtraColor, 5)
-            end
-        end
-        GalaxyMapQoL.drawCircle(renderer, boss.max, boss.color, 1)
-    end
-end
-
 function GalaxyMapQoL.galaxyMapQoL_onEditIconBtnPressed(_, isCallback)
     if isCallback and colorPicker.visible then return end
 
@@ -603,12 +582,26 @@ function GalaxyMapQoL.galaxyMapQoL_onShowOverlayBoxChanged()
 end
 
 function GalaxyMapQoL.onResourcesOverlaySelected(isSelected)
-    if not isSelected then -- hide legend
+    local map = GalaxyMap()
+    if not isSelected then
+        map.showCustomColorLayer = false
+        map:clearCustomColors()
+        -- hide legend
         for _, row in ipairs(legendRows) do
             row.picture.visible = false
             row.label.visible = false
         end
-    else -- show legend
+    else
+        -- create custom colored circles
+        local tbl = {}
+        for i, dist in ipairs(materialDistances) do
+            local color = Material(i).color
+            color.a = 0.7
+            GalaxyMapQoL.mapCircle(tbl, materialDistances[i], color)
+        end
+        map:setCustomColors(tbl)
+        map.showCustomColorLayer = true
+        -- show legend
         local material, color
         for i, row in ipairs(legendRows) do
             material = Material(i)
@@ -623,12 +616,39 @@ function GalaxyMapQoL.onResourcesOverlaySelected(isSelected)
 end
 
 function GalaxyMapQoL.onBossesOverlaySelected(isSelected)
-    if not isSelected then -- hide legend
+    local map = GalaxyMap()
+    if not isSelected then
+        map.showCustomColorLayer = false
+        map:clearCustomColors()
+        -- hide legend
         for _, row in ipairs(legendRows) do
             row.picture.visible = false
             row.label.visible = false
         end
-    else -- show legend
+    else
+        -- create custom colored circles
+        local distances = {}
+        for _, boss in ipairs(bossDistances) do
+            local dist = distances[boss.min]
+            if not dist then
+                distances[boss.min] = { boss.color }
+            else
+                dist[#dist+1] = boss.color
+            end
+            dist = distances[boss.max]
+            if not dist then
+                distances[boss.max] = { boss.color }
+            else
+                dist[#dist+1] = boss.color
+            end
+        end
+        local tbl = {}
+        for dist, colors in pairs(distances) do
+            GalaxyMapQoL.mapCircle(tbl, dist, colors, 10)
+        end
+        map:setCustomColors(tbl)
+        map.showCustomColorLayer = true
+        -- show legend
         local row
         for i, boss in ipairs(bossDistances) do
             row = legendRows[i]
@@ -766,6 +786,40 @@ function GalaxyMapQoL.selectIcon(index)
     local iconPicture = iconPictures[selectedIcon]
     iconPicture.color = colorPictures[selectedColorIndex].color
     iconSelector.position = iconPicture.lower - vec2(3, 3)
+end
+
+function GalaxyMapQoL.mapCircle(tbl, radius, colors, colorSwitchStep)
+    if type(colors) ~= "table" then
+        colors = {colors}
+    end
+    local color = colors[1]
+    local colorCount = #colors
+    local colorIndex = 1
+    local colorProgress = 0
+    local ex = math.floor(radius) / 2 * math.sqrt(2)
+    for x = 0, ex do
+        local y = math.floor(math.sqrt(radius * radius - x * x))
+        tbl[ivec2(x, y)] = color
+        tbl[ivec2(y, x)] = color
+        tbl[ivec2(x, -y)] = color
+        tbl[ivec2(y, -x)] = color
+        tbl[ivec2(-x, y)] = color
+        tbl[ivec2(-y, x)] = color
+        tbl[ivec2(-x, -y)] = color
+        tbl[ivec2(-y, -x)] = color
+        if colorSwitchStep then
+            if colorProgress == colorSwitchStep then
+                colorIndex = colorIndex + 1
+                if colorIndex > colorCount then
+                    colorIndex = 1
+                end
+                color = colors[colorIndex]
+                colorProgress = 0
+            else
+                colorProgress = colorProgress + 1
+            end
+        end
+    end
 end
 
 function GalaxyMapQoL.drawCircle(renderer, radius, color, layer, color2, colorSwitchStep)
