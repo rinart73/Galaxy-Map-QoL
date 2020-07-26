@@ -35,11 +35,23 @@ msgid "Hazard Zones"
 msgstr ""
 
 #: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
+msgid "Marks Hazard Zone sectors with a red rectangle in the bottom right corner"
+msgstr ""
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
 msgid "Faction Colors"
 msgstr ""
 
 #: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
 msgid "EXPERIMENTAL: Highlights faction territories with various colors allowing to distinguish them from other nearby factions.\nFactions won't have unique colors!"
+msgstr ""
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
+msgid "Lock Radar Signatures"
+msgstr ""
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
+msgid "Makes radar blips always visible"
 msgstr ""
 
 #: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:

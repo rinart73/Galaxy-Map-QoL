@@ -1,6 +1,7 @@
 package.path = package.path .. ";data/scripts/lib/?.lua"
 include("galaxy")
 local PassageMap = include("passagemap")
+local SectorSpecifics = include("sectorspecifics")
 include("azimuthlib-uicolorpicker")
 include("azimuthlib-uiproportionalsplitter")
 include("azimuthlib-uirectangle")
@@ -9,7 +10,7 @@ local Integration = include("GalaxyMapQoLIntegration")
 
 GalaxyMapQoL = {}
 
-local editIconBtn, iconsFactionComboBox, showOverlayComboBox, legendRows, editIconWindow, coordinatesLabel, editIconScrollFrame, colorSelector, colorPictures, colorPicker, iconSelector, warZoneCheckBox, factionColorsCheckBox, playerIconsContainer, allianceIconsContainer -- UI
+local editIconBtn, iconsFactionComboBox, showOverlayComboBox, legendRows, editIconWindow, coordinatesLabel, editIconScrollFrame, colorSelector, colorPictures, colorPicker, iconSelector, warZoneCheckBox, factionColorsCheckBox, playerIconsContainer, allianceIconsContainer, lockRadarCheckBox -- UI
 -- client
 local Config, customNamespace, sectorsPlayer, sectorsAlliance, isServerUsed, isEditIconShown, iconsFactionBoxHasAlliance, iconPictures, selectedIcon, editedX, editedY, materialDistances, distToCenter, selectedColorIndex, factionColorsIsRunning, factionsColorsCache
 local factionColorsUpdated = -30
@@ -28,6 +29,8 @@ local bossDistances = {
 }
 local playerMapIcons = {}
 local allianceMapIcons = {}
+local lockedRadarBlips = {}
+local specs = SectorSpecifics()
 local GT112 = GameVersion() >= Version(1, 1, 2)
 local galaxyMapQoL_updateClient -- extended functions
 
@@ -82,8 +85,6 @@ function GalaxyMapQoL.initialize()
     player:registerCallback("onHideGalaxyMap", "galaxyMapQoL_onHideGalaxyMap")
     player:registerCallback("onSelectMapCoordinates", "galaxyMapQoL_onEditIconBtnPressed")
     player:registerCallback("onMapRenderAfterLayers", "galaxyMapQoL_onMapRenderAfterLayers")
-
-    player:registerCallback("onSectorEntered", "galaxyMapQoL_onSectorEntered")
 
     if not customNamespace then
         invokeServerFunction("sync", true)
@@ -186,15 +187,21 @@ function GalaxyMapQoL.initUI()
     -- checkbox for war zones
     local rowY = 170
     if not customNamespace then
-        warZoneCheckBox = container:createCheckBox(Rect(150, rowY, 370, rowY + 20), "Hazard Zones"%_t, "onWarZoneCheckBoxChecked")
+        warZoneCheckBox = container:createCheckBox(Rect(150, rowY, 450, rowY + 20), "Hazard Zones"%_t, "onWarZoneCheckBoxChecked")
         warZoneCheckBox.captionLeft = false
+        warZoneCheckBox.tooltip = "Marks Hazard Zone sectors with a red rectangle in the bottom right corner"%_t
         warZoneCheckBox:setCheckedNoCallback(true)
         rowY = rowY + 30
     end
 
-    factionColorsCheckBox = container:createCheckBox(Rect(150, rowY, 370, rowY + 20), "Faction Colors"%_t, "galaxyMapQoL_onFactionColorsCheckBoxChecked")
-    factionColorsCheckBox.tooltip = "EXPERIMENTAL: Highlights faction territories with various colors allowing to distinguish them from other nearby factions.\nFactions won't have unique colors!"%_t
+    factionColorsCheckBox = container:createCheckBox(Rect(150, rowY, 450, rowY + 20), "Faction Colors"%_t, "galaxyMapQoL_onFactionColorsCheckBoxChecked")
     factionColorsCheckBox.captionLeft = false
+    factionColorsCheckBox.tooltip = "EXPERIMENTAL: Highlights faction territories with various colors allowing to distinguish them from other nearby factions.\nFactions won't have unique colors!"%_t
+    rowY = rowY + 30
+
+    lockRadarCheckBox = container:createCheckBox(Rect(150, rowY, 450, rowY + 20), "Lock Radar Signatures"%_t, "onLockRadarCheckBoxChecked")
+    lockRadarCheckBox.captionLeft = false
+    lockRadarCheckBox.tooltip = "Makes radar blips always visible"%_t
 
     -- color picker
     if not customNamespace then
@@ -347,6 +354,8 @@ function GalaxyMapQoL.galaxyMapQoL_onShowGalaxyMap()
             GalaxyMapQoL.startFactionColorsCalculation()
         end
     end
+
+    GalaxyMapQoL.onLockRadarCheckBoxChecked() -- update radar
 end
 
 function GalaxyMapQoL.galaxyMapQoL_onHideGalaxyMap()
@@ -361,18 +370,40 @@ end
 
 function GalaxyMapQoL.galaxyMapQoL_onMapRenderAfterLayers()
     local map = GalaxyMap()
-
     local half, topX, bottomY, bottomX, topY
     local renderer
+
+    if lockRadarCheckBox.checked then -- draw radar blips
+        renderer = UIRenderer()
+        half = (map:getCoordinatesScreenPosition(ivec2(1, 0)) - map:getCoordinatesScreenPosition(ivec2(0, 0))) * 0.5
+        topX, bottomY = map:getCoordinatesAtScreenPosition(vec2(0, 0))
+        bottomX, topY = map:getCoordinatesAtScreenPosition(getResolution())
+
+        local green = ColorInt(0xff42E745)
+        local yellow = ColorInt(0xffE7E142)
+        for coords, regular in pairs(lockedRadarBlips) do
+            if coords.x >= topX and coords.x <= bottomX and coords.y >= topY and coords.y <= bottomY then
+                local sx, sy = map:getCoordinatesScreenPosition(coords)
+                if regular then
+                    renderer:renderIcon(vec2(sx - half, sy - half), vec2(sx + half, sy + half), green, "data/textures/icons/galaxymapqol/ui-blip.png")
+                else
+                    renderer:renderIcon(vec2(sx - half, sy - half), vec2(sx + half, sy + half), yellow, "data/textures/icons/galaxymapqol/ui-blip-offgrid.png")
+                end
+                --renderer:renderIcon(vec2(sx - half, sy - half), vec2(sx + half, sy + half), regular and green or yellow, "data/textures/icons/galaxymapqol/ui-blip.png")
+            end
+        end
+    end
 
     if not GT112 then -- < 1.1.2 old drawing
         -- draw icons
         local iconFaction = iconsFactionComboBox.selectedIndex
         if iconFaction ~= 0 then
             renderer = UIRenderer()
-            half = (map:getCoordinatesScreenPosition(ivec2(1, 0)) - map:getCoordinatesScreenPosition(ivec2(0, 0))) * 0.5
-            topX, bottomY = map:getCoordinatesAtScreenPosition(vec2(0, 0))
-            bottomX, topY = map:getCoordinatesAtScreenPosition(getResolution())
+            if not half then
+                half = (map:getCoordinatesScreenPosition(ivec2(1, 0)) - map:getCoordinatesScreenPosition(ivec2(0, 0))) * 0.5
+                topX, bottomY = map:getCoordinatesAtScreenPosition(vec2(0, 0))
+                bottomX, topY = map:getCoordinatesAtScreenPosition(getResolution())
+            end
 
             local sectors = iconFaction == 1 and sectorsPlayer or sectorsAlliance
             local sx, sy
@@ -658,6 +689,34 @@ function GalaxyMapQoL.onWarZoneCheckBoxChecked()
     end
 end
 
+function GalaxyMapQoL.onLockRadarCheckBoxChecked()
+    if lockRadarCheckBox.checked then
+        local player = Player()
+        local x, y = Sector():getCoordinates()
+        local seed = GameSeed()
+        --local radius = math.ceil(entity:getBoostedValue(StatsBonuses.RadarReach, 14))
+        local radius = player.craft:getBoostedValue(StatsBonuses.RadarReach, 14)
+        local hiddenRadius = player.craft:getBoostedValue(StatsBonuses.HiddenSectorRadarReach, 0)
+        lockedRadarBlips = {}
+        for i = 0, radius do
+            local posEnd = math.floor(math.sqrt(radius * radius - i * i) - 1.00001)
+            for j = 1, posEnd + 1 do
+                local coords = { {x + i, y + j}, {x + j, y - i}, {x - i, y - j}, {x - j, y + i} }
+                for _, pair in ipairs(coords) do
+                    local n = pair[1]
+                    local m = pair[2]
+                    if not player:knowsSector(n, m) then
+                        local regular, offgrid = specs:determineContent(n, m, seed)
+                        if regular or (offgrid and distance(vec2(x, y), vec2(n, m)) <= hiddenRadius) then
+                            lockedRadarBlips[ivec2(n, m)] = regular
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
 function GalaxyMapQoL.galaxyMapQoL_onFactionColorsCheckBoxChecked()
     local map = GalaxyMap()
     if factionColorsCheckBox.checked then
@@ -675,10 +734,6 @@ function GalaxyMapQoL.galaxyMapQoL_onFactionColorsCheckBoxChecked()
         map.showFactionLayer = true
         map.showCustomColorLayer = false
     end
-end
-
-function GalaxyMapQoL.galaxyMapQoL_onSectorEntered(playerIndex, x, y, sectorChangeType)
-    factionColorsUpdated = 0
 end
 
 function GalaxyMapQoL.onFactionColorsCalculated(sectors, tookTime, memoryUsage)
@@ -968,7 +1023,6 @@ function GalaxyMapQoL.initOtherNamespace(namespace)
     namespace.galaxyMapQoL_onEditIconApplyBtnPressed = GalaxyMapQoL.galaxyMapQoL_onEditIconApplyBtnPressed
     namespace.galaxyMapQoL_onEditIconCancelBtnPressed = GalaxyMapQoL.galaxyMapQoL_onEditIconCancelBtnPressed
     namespace.galaxyMapQoL_onFactionColorsCheckBoxChecked = GalaxyMapQoL.galaxyMapQoL_onFactionColorsCheckBoxChecked
-    namespace.galaxyMapQoL_onSectorEntered = GalaxyMapQoL.galaxyMapQoL_onSectorEntered
 
     GalaxyMapQoL.initialize()
 end
