@@ -10,7 +10,7 @@ local Integration = include("GalaxyMapQoLIntegration")
 
 GalaxyMapQoL = {}
 
-local editIconBtn, iconsFactionComboBox, showOverlayComboBox, legendRows, editIconWindow, coordinatesLabel, editIconScrollFrame, colorSelector, colorPictures, colorPicker, iconSelector, warZoneCheckBox, factionColorsCheckBox, playerIconsContainer, allianceIconsContainer, lockRadarCheckBox -- UI
+local editIconBtn, iconsFactionComboBox, showOverlayComboBox, legendRows, editIconWindow, coordinatesLabel, editIconScrollFrame, colorSelector, colorPictures, colorPicker, iconSelector, warZoneCheckBox, factionColorsCheckBox, playerIconsContainer, allianceIconsContainer, lockRadarCheckBox, allianceNotesContainer -- UI
 -- client
 local Config, customNamespace, sectorsPlayer, sectorsAlliance, isServerUsed, isEditIconShown, iconsFactionBoxHasAlliance, iconPictures, selectedIcon, editedX, editedY, materialDistances, distToCenter, selectedColorIndex, factionColorsIsRunning, factionsColorsCache
 local factionColorsUpdated = -30
@@ -97,6 +97,7 @@ function GalaxyMapQoL.initUI()
     playerIconsContainer = map:createContainer()
     allianceIconsContainer = map:createContainer()
     allianceIconsContainer.visible = false
+    allianceNotesContainer = map:createContainer()
 
     local container = map:createContainer()
     editIconBtn = container:createButton(Rect(460, 50, 660, 80), "Edit icon"%_t, "galaxyMapQoL_onEditIconBtnPressed")
@@ -108,8 +109,8 @@ function GalaxyMapQoL.initUI()
 
     showOverlayComboBox = container:createComboBox(Rect(460, 125, 660, 150), "galaxyMapQoL_onShowOverlayBoxChanged")
     showOverlayComboBox:addEntry("Show overlay"%_t)
-    GalaxyMapQoL.addOverlay("Resources", "Resources"%_t, "onResourcesOverlaySelected")
-    GalaxyMapQoL.addOverlay("Bosses", "Bosses"%_t, "onBossesOverlaySelected")
+    GalaxyMapQoL.addOverlay("Resources", "Resources"%_t, "onResourcesOverlaySelected", "onResourcesOverlayRendered")
+    GalaxyMapQoL.addOverlay("Bosses", "Bosses"%_t, "onBossesOverlaySelected", "onBossesOverlayRendered")
 
     local lister = UIVerticalLister(Rect(670, 50, 770, 50), 5, 0)
     local partitions, picture
@@ -242,6 +243,10 @@ function GalaxyMapQoL.updateClient(timeStep)
             end
         end
     end
+
+    if GT112 and GalaxyMap().visible then
+        allianceNotesContainer.visible = GalaxyMap().showAllianceInfo
+    end
 end
 
 function GalaxyMapQoL.sync(isFullSync, playerData, allianceData)
@@ -317,11 +322,11 @@ function GalaxyMapQoL.galaxyMapQoL_onShowGalaxyMap()
     end
 
     -- add/remove 'Alliance' from faction combo box
-    local alliance = Player().alliance
-    if isServerUsed and alliance and not iconsFactionBoxHasAlliance then
+    local player = Player()
+    if isServerUsed and player.alliance and not iconsFactionBoxHasAlliance then
         iconsFactionComboBox:addEntry("Alliance"%_t)
         iconsFactionBoxHasAlliance = true
-    elseif not alliance and iconsFactionBoxHasAlliance then
+    elseif not player.alliance and iconsFactionBoxHasAlliance then
         local prevIndex = iconsFactionComboBox.selectedIndex
         iconsFactionComboBox:clear()
         iconsFactionComboBox:addEntry("Hide icons"%_t)
@@ -357,6 +362,22 @@ function GalaxyMapQoL.galaxyMapQoL_onShowGalaxyMap()
 
     GalaxyMapQoL.galaxyMapQoL_onShowOverlayBoxChanged() -- update overlays
     GalaxyMapQoL.onLockRadarCheckBoxChecked() -- update radar
+
+    if GT112 then -- update alliance note icons
+        allianceNotesContainer:clear()
+        if player.alliance then
+            for _, view in ipairs({player.alliance:getKnownSectors()}) do
+                if view.note and view.note ~= "" then
+                    local x, y = view:getCoordinates()
+                    local playerView = player:getKnownSector(x, y)
+                    if not playerView.note or playerView.note == "" then
+                        local icon = allianceNotesContainer:createMapIcon("data/textures/icons/galaxymapqol/ui-note.png", ivec2(x, y))
+                        icon.color = ColorInt(0xffFF00FF)
+                    end
+                end
+            end
+        end
+    end
 end
 
 function GalaxyMapQoL.galaxyMapQoL_onHideGalaxyMap()
@@ -615,6 +636,15 @@ function GalaxyMapQoL.onResourcesOverlaySelected(isSelected)
     end
 end
 
+function GalaxyMapQoL.onResourcesOverlayRendered(renderer)
+    local map = GalaxyMap()
+    local white = ColorRGB(1, 1, 1)
+    for i, dist in ipairs(materialDistances) do
+        local sx, sy = map:getCoordinatesScreenPosition(ivec2(0, -dist - 1))
+        drawTextRect(Material(i).name, Rect(sx - 200, sy, sx + 200, sy + 20), 0, 0, white, 15, 0, 0, 2)
+    end
+end
+
 function GalaxyMapQoL.onBossesOverlaySelected(isSelected)
     local map = GalaxyMap()
     if not isSelected then
@@ -657,6 +687,15 @@ function GalaxyMapQoL.onBossesOverlaySelected(isSelected)
             row.picture.visible = true
             row.label.visible = true
         end
+    end
+end
+
+function GalaxyMapQoL.onBossesOverlayRendered(renderer)
+    local map = GalaxyMap()
+    local white = ColorRGB(1, 1, 1)
+    for i, boss in ipairs(bossDistances) do
+        local sx, sy = map:getCoordinatesScreenPosition(ivec2(0, -boss.max + 8))
+        drawTextRect(boss.name, Rect(sx - 200, sy, sx + 200, sy + 20), 0, 0, white, 15, 0, 0, 2)
     end
 end
 
@@ -796,7 +835,7 @@ function GalaxyMapQoL.mapCircle(tbl, radius, colors, colorSwitchStep)
     local colorCount = #colors
     local colorIndex = 1
     local colorProgress = 0
-    local ex = math.floor(radius) / 2 * math.sqrt(2)
+    local ex = math.ceil(math.floor(radius) / 2 * math.sqrt(2))
     for x = 0, ex do
         local y = math.floor(math.sqrt(radius * radius - x * x))
         tbl[ivec2(x, y)] = color

@@ -65,7 +65,7 @@ callable(GalaxyMapQoL, "sync")
 function GalaxyMapQoL.syncWarZones()
     local now = appTime()
     local player = Player()
-    if Server():hasAdminPrivileges(player) or warZoneTimestamp + Config.HazardZoneRequestInterval <= now then
+    if Server().players == 1 or warZoneTimestamp + Config.HazardZoneRequestInterval <= now then
         warZoneTimestamp = now
         local status, syncedData = Galaxy():invokeFunction("galaxymapqol.lua", "getWarZoneData")
         if status ~= 0 or syncedData == nil then
@@ -104,6 +104,8 @@ function GalaxyMapQoL.requestAllianceData()
     if allianceIndex ~= player.allianceIndex then -- if player changed alliance, force update
         allianceLastRequest = -1
         allianceIndex = player.allianceIndex
+    elseif Server().players == 1 then -- no delay in singleplayer
+        allianceLastRequest = -1
     end
     if player.alliance then
         local status, syncedData, newTimestamp = Galaxy():invokeFunction("galaxymapqol.lua", "getAllianceData", player.allianceIndex, allianceLastRequest)
