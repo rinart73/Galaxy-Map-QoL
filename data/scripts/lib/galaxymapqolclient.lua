@@ -370,7 +370,7 @@ function GalaxyMapQoL.galaxyMapQoL_onShowGalaxyMap()
                 if view.note and view.note ~= "" then
                     local x, y = view:getCoordinates()
                     local playerView = player:getKnownSector(x, y)
-                    if not playerView.note or playerView.note == "" then
+                    if not playerView or not playerView.note or playerView.note == "" then
                         local icon = allianceNotesContainer:createMapIcon("data/textures/icons/galaxymapqol/ui-note.png", ivec2(x, y))
                         icon.color = ColorInt(0xffFF00FF)
                     end
