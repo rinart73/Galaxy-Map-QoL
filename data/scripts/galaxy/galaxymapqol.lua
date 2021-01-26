@@ -7,7 +7,7 @@ local restoreHappened = false
 
 local function loadAllianceData(allianceIndex)
     if not allianceData[allianceIndex] then -- load data
-        local data = Azimuth.loadConfig("AllianceData_"..allianceIndex, { allianceIcons = { default = {} }, allianceIconsCount = { default = 0 } }, false, "GalaxyMapQoL")
+        local data = Azimuth.loadConfig("AllianceData_"..allianceIndex, {allianceIcons = {{}}, allianceIconsCount = {0}}, false, "GalaxyMapQoL")
         -- fix icon errors from previous versions
         local iconsAmount = 0
         for key, sector in pairs(data.allianceIcons) do

@@ -50,9 +50,9 @@ function GalaxyMapQoL.initialize()
       ColorInt(0xffFF00FF):toInt() -- magenta
     }
     local configOptions = {
-      _version = { default = "1.1", comment = "Don't touch this file" },
-      playerIcons = { default = {} },
-      colors = { default = defaultColors }
+      ["_version"] = {"1.1", comment = "Don't touch this file" },
+      ["playerIcons"] = {{}},
+      ["colors"] = {defaultColors}
     }
     local isModified
     Config, isModified = Azimuth.loadConfig("GalaxyMapQoL", configOptions, true, true)
@@ -186,7 +186,7 @@ function GalaxyMapQoL.initUI()
     btn.maxTextSize = 14
 
     -- checkbox for war zones
-    local rowY = 170
+    local rowY = 200
     if not customNamespace then
         warZoneCheckBox = container:createCheckBox(Rect(150, rowY, 450, rowY + 20), "Hazard Zones"%_t, "onWarZoneCheckBoxChecked")
         warZoneCheckBox.captionLeft = false
@@ -277,7 +277,7 @@ function GalaxyMapQoL.sync(isFullSync, playerData, allianceData)
                 GalaxyMapQoL.updateMapIcons(true)
             else
                 sectorsAlliance[allianceData[1].."_"..allianceData[2]] = allianceData
-                GalaxyMapQoL.updateMapIcons(false, allianceData) -- update an icon
+                GalaxyMapQoL.updateMapIcons(true, allianceData) -- update an icon
             end
         end
     end
@@ -387,7 +387,7 @@ function GalaxyMapQoL.galaxyMapQoL_onHideGalaxyMap()
     for i = 1, 10 do
         Config.colors[i] = colorPictures[i+1].color:toInt()
     end
-    Azimuth.saveConfig("GalaxyMapQoL", Config, { _version = {comment = "Don't touch this file"} }, true, true)
+    Azimuth.saveConfig("GalaxyMapQoL", Config, {_version = {comment = "Don't touch this file"}}, true, true)
 end
 
 function GalaxyMapQoL.galaxyMapQoL_onMapRenderAfterLayers()
