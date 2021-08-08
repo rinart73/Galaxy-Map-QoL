@@ -1,70 +1,70 @@
-# ========== C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/galaxy/galaxymapqol.lua ==========
-#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/galaxy/galaxymapqol.lua:
-#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/player/map/galaxymapqol.lua:
+# ========== C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/galaxy/galaxymapqol.lua ==========
+#: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/galaxy/galaxymapqol.lua:
+#: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/player/map/galaxymapqol.lua:
 msgid "Maximum amount of icons reached"
 msgstr "Достигнуто максимальное кол-во иконок"
 
 
-# ========== C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua ==========
-#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
+# ========== C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua ==========
+#: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
 msgid "Edit icon"
 msgstr "Изменить иконку"
 
-#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
+#: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
 msgid "Hide icons"
 msgstr "Спрятать иконки"
 
-#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
+#: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
 msgid "Show overlay"
 msgstr "Показать оверлей"
 
-#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
-msgid "Resources"
-msgstr "Ресурсы"
-
-#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
+#: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
 msgid "Bosses"
 msgstr "Боссы"
 
-#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
+#: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
 msgid "Edit selected color"
 msgstr "Изменить выбранный цвет"
 
-#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
-msgid "Hazard Zones"
-msgstr "Опасные зоны"
+#: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
+msgid "Show Galaxy Map QoL options"
+msgstr "Показать опции Galaxy Map QoL"
 
-#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
+#: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
 msgid "Marks Hazard Zone sectors with a red rectangle in the bottom right corner"
 msgstr "Помечает сектора-Опасные зоны красным квадратом в правом нижнем углу"
 
-#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
-msgid "Faction Colors"
-msgstr "Цвета фракций"
-
-#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
-msgid "EXPERIMENTAL: Highlights faction territories with various colors allowing to distinguish them from other nearby factions.\nFactions won't have unique colors!"
-msgstr "ЭКСПЕРИМЕНТАЛЬНО: Подсвечивает территории фракций различными цветами, позволяя отличить их от ближайших фракций.\nФракции не будут иметь уникальные цвета!"
-
-#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
-msgid "Lock Radar Signatures"
-msgstr "Постоянные сигнатуры радара"
-
-#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
+#: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
 msgid "Makes radar blips always visible"
 msgstr "Отображает 'вспышки' радара всегда"
 
-#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
+#: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
+msgid "Hazard Zones"
+msgstr "Опасные зоны"
+
+#: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
+msgid "Faction Colors"
+msgstr "Цвета фракций"
+
+#: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
+msgid "EXPERIMENTAL: Highlights faction territories with various colors allowing to distinguish them from other nearby factions.\nFactions won't have unique colors!"
+msgstr "ЭКСПЕРИМЕНТАЛЬНО: Подсвечивает территории фракций различными цветами, позволяя отличить их от ближайших фракций.\nФракции не будут иметь уникальные цвета!"
+
+#: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
+msgid "Lock Radar Signatures"
+msgstr "Постоянные сигнатуры радара"
+
+#: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
 msgid "${x} : ${y} (dist: ${num})"
 msgstr "${x} : ${y} (дист.: ${num})"
 
-#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
+#: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
 msgid "\n Hazard Zone"
 msgstr "\n ОПАСНАЯ ЗОНА"
 
 
-# ========== C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/player/map/galaxymapqol.lua ==========
-#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/player/map/galaxymapqol.lua:
+# ========== C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/player/map/galaxymapqol.lua ==========
+#: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/player/map/galaxymapqol.lua:
 msgid "Incorrect icon"
 msgstr "Неправильная иконка"
 

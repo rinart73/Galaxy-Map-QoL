@@ -1,48 +1,71 @@
-
+# ========== C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/galaxy/galaxymapqol.lua ==========
+#: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/galaxy/galaxymapqol.lua:
+#: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/player/map/galaxymapqol.lua:
 msgid "Maximum amount of icons reached"
 msgstr "已达到最大图标数量限制"
 
+
+# ========== C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua ==========
+#: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
 msgid "Edit icon"
 msgstr "编辑图标"
 
+#: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
 msgid "Hide icons"
 msgstr "隐藏图标"
 
+#: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
 msgid "Show overlay"
 msgstr "显示叠加"
 
-msgid "Resources"
-msgstr "资源分布"
-
+#: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
 msgid "Bosses"
 msgstr "Bosses"
 
+#: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
 msgid "Edit selected color"
 msgstr "编辑所选图标颜色"
 
-msgid "Hazard Zones"
-msgstr "危险区域"
+#: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
+msgid "Show Galaxy Map QoL options"
+msgstr ""
 
+#: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
 msgid "Marks Hazard Zone sectors with a red rectangle in the bottom right corner"
 msgstr "在右下角用红色矩形标记危险区域扇区"
 
-msgid "Faction Colors"
-msgstr "阵营颜色"
-
-msgid "EXPERIMENTAL: Highlights faction territories with various colors allowing to distinguish them from other nearby factions.\nFactions won't have unique colors!"
-msgstr "实验性：以各种颜色突出显示阵营领土，以使其与附近的其他阵营区分。\n阵营可能会同色颜色！"
-
-msgid "Lock Radar Signatures"
-msgstr "锁定雷达信号"
-
+#: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
 msgid "Makes radar blips always visible"
 msgstr "使雷达信号始终可见"
 
+#: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
+msgid "Hazard Zones"
+msgstr "危险区域"
+
+#: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
+msgid "Faction Colors"
+msgstr "阵营颜色"
+
+#: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
+msgid "EXPERIMENTAL: Highlights faction territories with various colors allowing to distinguish them from other nearby factions.\nFactions won't have unique colors!"
+msgstr "实验性：以各种颜色突出显示阵营领土，以使其与附近的其他阵营区分。\n阵营可能会同色颜色！"
+
+#: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
+msgid "Lock Radar Signatures"
+msgstr "锁定雷达信号"
+
+#: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
 msgid "${x} : ${y} (dist: ${num})"
 msgstr "${x} : ${y} (距离: ${num})"
 
+#: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
 msgid "\n Hazard Zone"
 msgstr "\n 危险区域"
 
+
+# ========== C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/player/map/galaxymapqol.lua ==========
+#: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/player/map/galaxymapqol.lua:
 msgid "Incorrect icon"
 msgstr "错误图标"
+
+

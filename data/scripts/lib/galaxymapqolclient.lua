@@ -10,9 +10,9 @@ local Integration = include("GalaxyMapQoLIntegration")
 
 GalaxyMapQoL = {}
 
-local editIconBtn, iconsFactionComboBox, showOverlayComboBox, legendRows, editIconWindow, coordinatesLabel, editIconScrollFrame, colorSelector, colorPictures, colorPicker, iconSelector, warZoneCheckBox, factionColorsCheckBox, playerIconsContainer, allianceIconsContainer, lockRadarCheckBox, allianceNotesContainer -- UI
+local editIconBtn, iconsFactionComboBox, showOverlayComboBox, legendRows, editIconWindow, coordinatesLabel, editIconScrollFrame, colorSelector, colorPictures, colorPicker, iconSelector, warZoneCheckBox, factionColorsCheckBox, playerIconsContainer, allianceIconsContainer, lockRadarCheckBox, allianceNotesContainer, optionsContainer -- UI
 -- client
-local Config, customNamespace, sectorsPlayer, sectorsAlliance, isServerUsed, isEditIconShown, iconsFactionBoxHasAlliance, iconPictures, selectedIcon, editedX, editedY, materialDistances, distToCenter, selectedColorIndex, factionColorsIsRunning, factionsColorsCache
+local Config, customNamespace, sectorsPlayer, sectorsAlliance, isServerUsed, isEditIconShown, iconsFactionBoxHasAlliance, iconPictures, selectedIcon, editedX, editedY, materialDistances, distToCenter, selectedColorIndex, factionColorsIsRunning, factionsColorsCache, techLevels
 local factionColorsUpdated = -30
 local overlays = {}
 local warZoneData = {}
@@ -77,6 +77,15 @@ function GalaxyMapQoL.initialize()
         local beltRadius = Balancing_GetMaterialBeltRadius(i)
         materialDistances[i] = (beltRadius + beltSize * (1 + existanceThreshold)) * maxCoords
     end
+    
+    -- calculating tech levels
+    techLevels = {}
+    local maxTech = Balancing_GetTechLevel(0, 0)
+    if maxTech >= 5 then
+        for i = maxTech - 5, 0, -5 do
+            techLevels[i] = Balancing_GetSectorByTechLevel(i)
+        end
+    end
 
     GalaxyMapQoL.initUI()
 
@@ -110,6 +119,7 @@ function GalaxyMapQoL.initUI()
     showOverlayComboBox = container:createComboBox(Rect(460, 125, 660, 150), "galaxyMapQoL_onShowOverlayBoxChanged")
     showOverlayComboBox:addEntry("Show overlay"%_t)
     GalaxyMapQoL.addOverlay("Resources", "Resources"%_t, "onResourcesOverlaySelected", "onResourcesOverlayRendered")
+    GalaxyMapQoL.addOverlay("TechLevels", "Tech Level"%_t, "onTechLevelsOverlaySelected", "onTechLevelsOverlayRendered")
     GalaxyMapQoL.addOverlay("Bosses", "Bosses"%_t, "onBossesOverlaySelected", "onBossesOverlayRendered")
 
     local lister = UIVerticalLister(Rect(670, 50, 770, 50), 5, 0)
@@ -185,24 +195,47 @@ function GalaxyMapQoL.initUI()
     btn = editIconWindow:createButton(splitter.right, "Cancel"%_t, "galaxyMapQoL_onEditIconCancelBtnPressed")
     btn.maxTextSize = 14
 
-    -- checkbox for war zones
-    local rowY = 200
-    if not customNamespace then
-        warZoneCheckBox = container:createCheckBox(Rect(150, rowY, 450, rowY + 20), "Hazard Zones"%_t, "onWarZoneCheckBoxChecked")
+    if GameVersion() >= Version("2.0") then
+        local btn = container:createButton(Rect(10, 200, 50, 240), "qol", "onShowOptionsBtnPressed")
+        btn.tooltip = "Show Galaxy Map QoL options"%_t
+        
+        optionsContainer = map:createContainer()
+        optionsContainer.visible = false
+        local rowY = 50
+        
+        warZoneCheckBox = optionsContainer:createCheckBox(Rect(150, rowY, 220, rowY + 30), "", "onWarZoneCheckBoxChecked")
         warZoneCheckBox.captionLeft = false
         warZoneCheckBox.tooltip = "Marks Hazard Zone sectors with a red rectangle in the bottom right corner"%_t
         warZoneCheckBox:setCheckedNoCallback(true)
+        local picture = optionsContainer:createPicture(Rect(190, rowY, 220, rowY + 30), "data/textures/icons/hazard-sign.png")
+        picture.isIcon = true
+        rowY = rowY + 40
+        
+        lockRadarCheckBox = optionsContainer:createCheckBox(Rect(150, rowY, 220, rowY + 30), "", "onLockRadarCheckBoxChecked")
+        lockRadarCheckBox.captionLeft = false
+        lockRadarCheckBox.tooltip = "Makes radar blips always visible"%_t
+        local picture = optionsContainer:createPicture(Rect(190, rowY, 220, rowY + 30), "data/textures/icons/movement-sensor.png")
+        picture.isIcon = true
+    else -- pre 2.0
+        -- checkbox for war zones
+        local rowY = 200
+        if not customNamespace then
+            warZoneCheckBox = container:createCheckBox(Rect(150, rowY, 450, rowY + 20), "Hazard Zones"%_t, "onWarZoneCheckBoxChecked")
+            warZoneCheckBox.captionLeft = false
+            warZoneCheckBox.tooltip = "Marks Hazard Zone sectors with a red rectangle in the bottom right corner"%_t
+            warZoneCheckBox:setCheckedNoCallback(true)
+            rowY = rowY + 30
+        end
+
+        factionColorsCheckBox = container:createCheckBox(Rect(150, rowY, 450, rowY + 20), "Faction Colors"%_t, "galaxyMapQoL_onFactionColorsCheckBoxChecked")
+        factionColorsCheckBox.captionLeft = false
+        factionColorsCheckBox.tooltip = "EXPERIMENTAL: Highlights faction territories with various colors allowing to distinguish them from other nearby factions.\nFactions won't have unique colors!"%_t
         rowY = rowY + 30
+
+        lockRadarCheckBox = container:createCheckBox(Rect(150, rowY, 450, rowY + 20), "Lock Radar Signatures"%_t, "onLockRadarCheckBoxChecked")
+        lockRadarCheckBox.captionLeft = false
+        lockRadarCheckBox.tooltip = "Makes radar blips always visible"%_t
     end
-
-    factionColorsCheckBox = container:createCheckBox(Rect(150, rowY, 450, rowY + 20), "Faction Colors"%_t, "galaxyMapQoL_onFactionColorsCheckBoxChecked")
-    factionColorsCheckBox.captionLeft = false
-    factionColorsCheckBox.tooltip = "EXPERIMENTAL: Highlights faction territories with various colors allowing to distinguish them from other nearby factions.\nFactions won't have unique colors!"%_t
-    rowY = rowY + 30
-
-    lockRadarCheckBox = container:createCheckBox(Rect(150, rowY, 450, rowY + 20), "Lock Radar Signatures"%_t, "onLockRadarCheckBoxChecked")
-    lockRadarCheckBox.captionLeft = false
-    lockRadarCheckBox.tooltip = "Makes radar blips always visible"%_t
 
     -- color picker
     if not customNamespace then
@@ -347,7 +380,7 @@ function GalaxyMapQoL.galaxyMapQoL_onShowGalaxyMap()
         invokeServerFunction("syncWarZones")
     end
 
-    if factionColorsCheckBox.checked then
+    if factionColorsCheckBox and factionColorsCheckBox.checked then
         if factionsColorsCache then
             local map = GalaxyMap()
             map:clearCustomColors()
@@ -492,7 +525,11 @@ function GalaxyMapQoL.drawDistanceToCenter(map)
         end
         if distToCenter.passable then
             local mx, my = map:getCoordinatesScreenPosition(ivec2(x, y))
-            drawText(distToCenter.text, mx + 24, my - 15, distColor, 13, 0, 0, 1)
+            if GameVersion() >= Version("2.0") then -- font changes, shift text
+                drawText(distToCenter.text, mx + 40, my - 15, distColor, 13, 0, 0, 1)
+            else
+                drawText(distToCenter.text, mx + 24, my - 15, distColor, 13, 0, 0, 1)
+            end
         end
     end
 end
@@ -618,7 +655,7 @@ function GalaxyMapQoL.onResourcesOverlaySelected(isSelected)
         for i, dist in ipairs(materialDistances) do
             local color = Material(i).color
             color.a = 0.7
-            GalaxyMapQoL.mapCircle(tbl, materialDistances[i], color)
+            GalaxyMapQoL.mapCircle(tbl, dist, color)
         end
         map:setCustomColors(tbl)
         map.showCustomColorLayer = true
@@ -642,6 +679,38 @@ function GalaxyMapQoL.onResourcesOverlayRendered(renderer)
     for i, dist in ipairs(materialDistances) do
         local sx, sy = map:getCoordinatesScreenPosition(ivec2(0, -dist - 1))
         drawTextRect(Material(i).name, Rect(sx - 200, sy, sx + 200, sy + 20), 0, 0, white, 15, 0, 0, 2)
+    end
+end
+
+function GalaxyMapQoL.onTechLevelsOverlaySelected(isSelected)
+    local map = GalaxyMap()
+    if not isSelected then
+        map.showCustomColorLayer = false
+        map:clearCustomColors()
+        -- hide legend
+        for _, row in ipairs(legendRows) do
+            row.picture.visible = false
+            row.label.visible = false
+        end
+    else
+        -- create custom colored circles
+        local tbl = {}
+        for _, dist in pairs(techLevels) do
+            local color = ColorRGB(0.7, 0.7, 0.7)
+            color.a = 0.7
+            GalaxyMapQoL.mapCircle(tbl, dist, color)
+        end
+        map:setCustomColors(tbl)
+        map.showCustomColorLayer = true
+    end
+end
+
+function GalaxyMapQoL.onTechLevelsOverlayRendered()
+    local map = GalaxyMap()
+    local white = ColorRGB(1, 1, 1)
+    for tech, dist in pairs(techLevels) do
+        local sx, sy = map:getCoordinatesScreenPosition(ivec2(0, -dist - 1))
+        drawTextRect("Tech"%_t.." "..tech, Rect(sx - 200, sy, sx + 200, sy + 20), 0, 0, white, 15, 0, 0, 2)
     end
 end
 
@@ -740,6 +809,10 @@ function GalaxyMapQoL.galaxyMapQoL_onEditIconCancelBtnPressed()
     colorPicker:hide()
     editIconWindow.visible = false
     isEditIconShown = false
+end
+
+function GalaxyMapQoL.onShowOptionsBtnPressed()
+    optionsContainer.visible = not optionsContainer.visible
 end
 
 function GalaxyMapQoL.onWarZoneCheckBoxChecked()
