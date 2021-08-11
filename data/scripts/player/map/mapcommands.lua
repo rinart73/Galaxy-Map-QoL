@@ -8,9 +8,11 @@ gmqol_initUI = MapCommands.initUI
 function MapCommands.initUI(...)
     gmqol_initUI(...)
 
-    shipList.shipsContainer.layer = 3
-    shipList.ordersContainer.layer = 3
-    shipList.contextMenuContainer.layer = 3
+    if shipList then
+        shipList.shipsContainer.layer = 3
+        shipList.ordersContainer.layer = 3
+        shipList.contextMenuContainer.layer = 3
+    end
 end
 
 
