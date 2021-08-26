@@ -1,4 +1,5 @@
 package.path = package.path .. ";data/scripts/lib/?.lua"
+include("utility")
 include("galaxy")
 local PassageMap = include("passagemap")
 local SectorSpecifics = include("sectorspecifics")
@@ -10,7 +11,7 @@ local Integration = include("GalaxyMapQoLIntegration")
 
 GalaxyMapQoL = {}
 
-local editIconBtn, iconsFactionComboBox, showOverlayComboBox, legendRows, editIconWindow, coordinatesLabel, editIconScrollFrame, colorSelector, colorPictures, colorPicker, iconSelector, warZoneCheckBox, factionColorsCheckBox, playerIconsContainer, allianceIconsContainer, lockRadarCheckBox, allianceNotesContainer, optionsContainer -- UI
+local editIconBtn, iconsFactionComboBox, showOverlayComboBox, legendRows, editIconWindow, coordinatesLabel, editIconScrollFrame, colorSelector, colorPictures, colorPicker, iconSelector, warZoneCheckBox, factionColorsCheckBox, playerIconsContainer, allianceIconsContainer, lockRadarCheckBox, highlightAllianceNotesCheckBox, allianceNotesContainer, optionsContainer -- UI
 -- client
 local Config, customNamespace, sectorsPlayer, sectorsAlliance, isServerUsed, isEditIconShown, iconsFactionBoxHasAlliance, iconPictures, selectedIcon, editedX, editedY, materialDistances, distToCenter, selectedColorIndex, factionColorsIsRunning, factionsColorsCache, techLevels
 local factionColorsUpdated = -30
@@ -216,6 +217,13 @@ function GalaxyMapQoL.initUI()
         lockRadarCheckBox.tooltip = "Makes radar blips always visible"%_t
         local picture = optionsContainer:createPicture(Rect(190, rowY, 220, rowY + 30), "data/textures/icons/movement-sensor.png")
         picture.isIcon = true
+        rowY = rowY + 40
+        
+        highlightAllianceNotesCheckBox = optionsContainer:createCheckBox(Rect(150, rowY, 220, rowY + 30), "", "onHighlightAllianceNotesChecked")
+        highlightAllianceNotesCheckBox.captionLeft = false
+        highlightAllianceNotesCheckBox.tooltip = "Highlight alliance notes with magenta at the bottom right corner"%_t
+        local picture = optionsContainer:createPicture(Rect(190, rowY, 220, rowY + 30), "data/textures/icons/galaxymapqol/ui-highlight-alliance-notes.png")
+        picture.isIcon = true
     else -- pre 2.0
         -- checkbox for war zones
         local rowY = 200
@@ -235,6 +243,11 @@ function GalaxyMapQoL.initUI()
         lockRadarCheckBox = container:createCheckBox(Rect(150, rowY, 450, rowY + 20), "Lock Radar Signatures"%_t, "onLockRadarCheckBoxChecked")
         lockRadarCheckBox.captionLeft = false
         lockRadarCheckBox.tooltip = "Makes radar blips always visible"%_t
+        rowY = rowY + 30
+        
+        highlightAllianceNotesCheckBox = container:createCheckBox(Rect(150, rowY, 450, rowY + 20), "Highlight Alliance Notes"%_t, "onHighlightAllianceNotesChecked")
+        highlightAllianceNotesCheckBox.captionLeft = false
+        highlightAllianceNotesCheckBox.tooltip = "Highlight alliance notes with magenta at the bottom right corner"%_t
     end
 
     -- color picker
@@ -278,7 +291,7 @@ function GalaxyMapQoL.updateClient(timeStep)
     end
 
     if GT112 and GalaxyMap().visible then
-        allianceNotesContainer.visible = GalaxyMap().showAllianceInfo
+        allianceNotesContainer.visible = GalaxyMap().showAllianceInfo and highlightAllianceNotesCheckBox.checked
     end
 end
 
@@ -399,13 +412,31 @@ function GalaxyMapQoL.galaxyMapQoL_onShowGalaxyMap()
     if GT112 then -- update alliance note icons
         allianceNotesContainer:clear()
         if player.alliance then
+            local path = GameVersion() >= Version("2.0") and "data/textures/icons/galaxymapqol/ui-note-2.0.png" or "data/textures/icons/galaxymapqol/ui-note.png"
             for _, view in ipairs({player.alliance:getKnownSectors()}) do
-                if view.note and view.note ~= "" then
-                    local x, y = view:getCoordinates()
-                    local playerView = player:getKnownSector(x, y)
-                    if not playerView or not playerView.note or playerView.note == "" then
-                        local icon = allianceNotesContainer:createMapIcon("data/textures/icons/galaxymapqol/ui-note.png", ivec2(x, y))
-                        icon.color = ColorInt(0xffFF00FF)
+                if view.note then
+                    local hasNote
+                    if atype(view.note) == "NamedFormat" then
+                        hasNote = view.note.text ~= ""
+                    else
+                        hasNote = view.note ~= ""
+                    end
+                    if hasNote then
+                        hasNote = false
+                        local x, y = view:getCoordinates()
+                        local playerView = player:getKnownSector(x, y)
+                        if playerView then
+                            if atype(playerView.note) == "NamedFormat" then
+                                hasNote = playerView.note.text ~= ""
+                            else
+                                hasNote = playerView.note ~= ""
+                            end
+                        end
+                        if not hasNote then
+                            local icon = allianceNotesContainer:createMapIcon(path, ivec2(x, y))
+                            icon.color = ColorInt(0xffFF00FF)
+                            --icon.layer = 0
+                        end
                     end
                 end
             end
@@ -847,6 +878,10 @@ function GalaxyMapQoL.onLockRadarCheckBoxChecked()
             end
         end
     end
+end
+
+function GalaxyMapQoL.onHighlightAllianceNotesChecked()
+    allianceNotesContainer.visible = GalaxyMap().showAllianceInfo and highlightAllianceNotesCheckBox.checked
 end
 
 function GalaxyMapQoL.galaxyMapQoL_onFactionColorsCheckBoxChecked()

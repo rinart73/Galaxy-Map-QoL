@@ -39,6 +39,10 @@ msgid "Makes radar blips always visible"
 msgstr "Отображает 'вспышки' радара всегда"
 
 #: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
+msgid "Highlight alliance notes with magenta at the bottom right corner"
+msgstr "Подсветить пометки альянса пурпурным цветом в правом нижнем углу"
+
+#: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
 msgid "Hazard Zones"
 msgstr "Опасные зоны"
 
@@ -53,6 +57,10 @@ msgstr "ЭКСПЕРИМЕНТАЛЬНО: Подсвечивает террит�
 #: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
 msgid "Lock Radar Signatures"
 msgstr "Постоянные сигнатуры радара"
+
+#: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
+msgid "Highlight Alliance Notes"
+msgstr "Подсветить пометки альянса"
 
 #: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
 msgid "${x} : ${y} (dist: ${num})"

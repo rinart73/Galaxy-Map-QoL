@@ -39,6 +39,10 @@ msgid "Makes radar blips always visible"
 msgstr "使雷达信号始终可见"
 
 #: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
+msgid "Highlight alliance notes with magenta at the bottom right corner"
+msgstr ""
+
+#: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
 msgid "Hazard Zones"
 msgstr "危险区域"
 
@@ -53,6 +57,10 @@ msgstr "实验性：以各种颜色突出显示阵营领土，以使其与附近
 #: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
 msgid "Lock Radar Signatures"
 msgstr "锁定雷达信号"
+
+#: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
+msgid "Highlight Alliance Notes"
+msgstr ""
 
 #: C:/Users/user/AppData/Roaming/Avorion/mods/Galaxy Map QoL/data/scripts/lib/galaxymapqolclient.lua:
 msgid "${x} : ${y} (dist: ${num})"
